@@ -3,18 +3,11 @@ import json
 import xml.etree.ElementTree as ET
 from collections import Counter
 import string
-#import en_core_web_sm
-#en_nlp = en_core_web_sm.load()
-from config import *
-
-
+import en_core_web_sm
+en_nlp = en_core_web_sm.load()
 import nltk
 import re
 import numpy as np
-
-
-### Opinion naar AspectTerm
-###
 
 def window(iterable, size): # stack overflow solution for sliding window
     i = iter(iterable)
@@ -76,7 +69,7 @@ Return:
 @max_target_len: maximum target length
 
 """
-def read_data_2014(fname, source_count, source_word2idx, target_count, target_phrase2idx, file_name):
+def read_data_2016(fname, source_count, source_word2idx, target_count, target_phrase2idx, file_name):
     if os.path.isfile(fname) == False:
         raise ("[!] Data %s not found" % fname)
 
@@ -101,13 +94,12 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
             source_words.extend([''.join(sp).lower()])
         if len(sptoks) > max_sent_len:
             max_sent_len = len(sptoks)
-        for aspectTerms in sentence.iter('aspectTerms'):
-            for aspectTerm in aspectTerms.findall('aspectTerm'):
-                if aspectTerm.get("polarity") == "conflict":
+        for opinions in sentence.iter('Opinions'):
+            for opinion in opinions.findall('Opinion'):
+                if opinion.get("polarity") == "conflict":
                     countConfl += 1
                     continue
-                    #TERM IPV TARGET
-                asp = aspectTerm.get('term')
+                asp = opinion.get('target')
                 if asp != 'NULL':
                     aspNew = re.sub(' +', ' ', asp)
                     t_sptoks = nltk.word_tokenize(aspNew)
@@ -140,11 +132,10 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
             idx = []
             for sptok in sptoks:
                 idx.append(source_word2idx[''.join(sptok).lower()])
-            for aspectTerms in sentence.iter('aspectTerms'):
-                for aspectTerm in aspectTerms.findall('aspectTerm'):
-                    if aspectTerm.get("polarity") == "conflict": continue
-                    #TERM IPV TARGET
-                    asp = aspectTerm.get('term')
+            for opinions in sentence.iter('Opinions'):
+                for opinion in opinions.findall('Opinion'):
+                    if opinion.get("polarity") == "conflict": continue
+                    asp = opinion.get('target')
                     if asp != 'NULL': #removes implicit targets
                         aspNew = re.sub(' +', ' ', asp)
                         t_sptoks = nltk.word_tokenize(aspNew)
@@ -156,7 +147,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
                         outF.write("\n")
                         outF.write(outputtarget)
                         outF.write("\n")
-                        pos_info, lab = _get_data_tuple(sptoks, t_sptoks, aspectTerm.get('polarity'))
+                        pos_info, lab = _get_data_tuple(sptoks, t_sptoks, opinion.get('polarity'))
                         pos_info = [(1-(i / len(idx))) for i in pos_info]
                         source_loc_data.append(pos_info)
                         targetdata = ' '.join(sp for sp in t_sptoks).lower()
@@ -167,10 +158,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
 
     outF.close()
     print("Read %s aspects from %s" % (len(source_data), fname))
-    if FLAGS.writable == 1:
-        with open(FLAGS.results_file, "a") as results:
-            results.write("")
-    #print(countConfl)
+    print(countConfl)
     return source_data, source_loc_data, target_data, target_label, max_sent_len, source_loc_data, max_target_len
 
 
