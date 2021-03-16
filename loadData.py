@@ -111,20 +111,21 @@ def loadHyperData (config,loadData,percentage=0.8):
 def loadCrossValidation (config, split_size, load=True):
     FLAGS = config
     if load:
-        words,svmwords, sent = [], [], []
+        #words,svmwords, sent = [], [], []
+        words, sent = [], []
 
-        with open(FLAGS.train_path,encoding='cp1252') as f, \
-         open(FLAGS.train_svm_path,encoding='cp1252') as svm:
+        with open(FLAGS.train_path,encoding='cp1252') as f:  #, \
+         #open(FLAGS.train_svm_path,encoding='cp1252') as svm:
             lines = f.readlines()
             for i in range(0, len(lines), 3):
                 words.append([lines[i], lines[i + 1], lines[i + 2]])
                 sent.append(lines[i + 2].strip().split()[0])
             words = np.asarray(words)
 
-            svmlines = svm.readlines()
-            for i in range(0, len(svmlines) ,4):
-                svmwords.append([svmlines[i], svmlines[i + 1], svmlines[i + 2], svmlines[i + 3]])
-            svmwords = np.asarray(svmwords)
+            #svmlines = svm.readlines()
+            #for i in range(0, len(svmlines) ,4):
+            #    svmwords.append([svmlines[i], svmlines[i + 1], svmlines[i + 2], svmlines[i + 3]])
+            #svmwords = np.asarray(svmwords)
 
             sent = np.asarray(sent)
 
@@ -133,12 +134,12 @@ def loadCrossValidation (config, split_size, load=True):
             for train_idx, val_idx in kf.split(words, sent):
                 words_1 = words[train_idx]
                 words_2 = words[val_idx]
-                svmwords_1 = svmwords[train_idx]
-                svmwords_2 = svmwords[val_idx]
+                #svmwords_1 = svmwords[train_idx]
+                #svmwords_2 = svmwords[val_idx]
                 with open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/cross_train_'+ str(i) +'.txt', 'w') as train, \
-                open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/cross_val_'+ str(i) +'.txt', 'w') as val, \
-                open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/svm/cross_train_svm_'+ str(i) +'.txt', 'w') as svmtrain, \
-                open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/svm/cross_val_svm_'+ str(i) +'.txt', 'w') as svmval:
+                open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/cross_val_'+ str(i) +'.txt', 'w') as val:    #, \
+                #open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/svm/cross_train_svm_'+ str(i) +'.txt', 'w') as svmtrain, \
+                #open("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/svm/cross_val_svm_'+ str(i) +'.txt', 'w') as svmval:
                     for row in words_1:
                         train.write(row[0])
                         train.write(row[1])
@@ -147,16 +148,16 @@ def loadCrossValidation (config, split_size, load=True):
                         val.write(row[0])
                         val.write(row[1])
                         val.write(row[2])
-                    for row in svmwords_1:
-                        svmtrain.write(row[0])
-                        svmtrain.write(row[1])
-                        svmtrain.write(row[2])
-                        svmtrain.write(row[3])
-                    for row in svmwords_2:
-                        svmval.write(row[0])
-                        svmval.write(row[1])
-                        svmval.write(row[2])
-                        svmval.write(row[3])
+                    #for row in svmwords_1:
+                    #    svmtrain.write(row[0])
+                    #    svmtrain.write(row[1])
+                    #    svmtrain.write(row[2])
+                    #    svmtrain.write(row[3])
+                    #for row in svmwords_2:
+                    #    svmval.write(row[0])
+                    #    svmval.write(row[1])
+                    #    svmval.write(row[2])
+                    #    svmval.write(row[3])
                 i += 1
         #get statistic properties from txt file
     train_size, train_polarity_vector = getStatsFromFile("data/programGeneratedData/crossValidation"+str(FLAGS.year)+'/cross_train_0.txt')

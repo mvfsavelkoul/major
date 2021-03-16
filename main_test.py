@@ -112,16 +112,16 @@ def run_main(splitpercent):
         # out of sample accuracy
         accuracyOnt, remaining_size = Ontology.run(backup, FLAGS.test_path, runSVM)
         # in sample accuracy
-        Ontology = OntReasoner()
-        accuracyInSampleOnt, remaining_size = Ontology.run(backup, FLAGS.train_path, runSVM)
+        #Ontology = OntReasoner()
+        #accuracyInSampleOnt, remaining_size = Ontology.run(backup, FLAGS.train_path, runSVM)
         if runSVM == True:
             test = FLAGS.remaining_svm_test_path
         else:
             test = FLAGS.remaining_test_path
-        print('train acc = {:.4f}, test acc={:.4f}, remaining size={}'.format(accuracyInSampleOnt, accuracyOnt, remaining_size))
+        print('test acc={:.4f}, remaining size={}'.format(accuracyOnt, remaining_size))
         with open(FLAGS.results_file, "a") as results:
             if FLAGS.writable == 1:
-                results.write("---\nOntology. Train accuracy: {:.4f}. Test accuracy: {:.4f}\n".format(accuracyInSampleOnt, accuracyOnt))
+                results.write("---\nOntology. Test accuracy: {:.4f}\n".format(accuracyOnt))
     else:
         if runSVM == True:
             test = FLAGS.test_svm_path

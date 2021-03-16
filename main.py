@@ -24,7 +24,7 @@ import sys
 # main function
 def main(_):
     loadData = True
-    useOntology = False
+    useOntology = True
     runCABASC = False
     runLCRROT = False
     runLCRROTINVERSE = False
@@ -42,11 +42,7 @@ def main(_):
     # retrieve data and wordembeddings
     train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, loadData)
 
-    # Temporary fix.
-    train_size = len(train_size)
-    test_size = len(test_size)
-
-    print(test_size)
+    #print(test_size)
     # Why?
     remaining_size = 250
     accuracyOnt = 0.87
@@ -57,8 +53,8 @@ def main(_):
         #out of sample accuracy
         accuracyOnt, remaining_size = Ontology.run(backup,FLAGS.test_path, runSVM)
         #in sample accuracy
-        Ontology = OntReasoner()
-        accuracyInSampleOnt, remaining_size = Ontology.run(backup,FLAGS.train_path, runSVM)
+        #Ontology = OntReasoner()
+        #accuracyInSampleOnt, remaining_size = Ontology.run(backup,FLAGS.train_path, runSVM)
         if runSVM == True:
             test = FLAGS.remaining_svm_test_path
         else:
