@@ -160,6 +160,9 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         else:
             is_r = False
 
+        if FLAGS.writable == 1:
+            with open(FLAGS.results_file, "a") as results:
+                results.write("Train data. ")
         tr_x, tr_sen_len, tr_x_bw, tr_sen_len_bw, tr_y, tr_target_word, tr_tar_len, _, _, _ = load_inputs_twitter(
             train_path,
             word_id_mapping,
@@ -168,6 +171,10 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
             is_r,
             FLAGS.max_target_len
         )
+
+        if FLAGS.writable == 1:
+            with open(FLAGS.results_file, "a") as results:
+                results.write("Test data. ")
         te_x, te_sen_len, te_x_bw, te_sen_len_bw, te_y, te_target_word, te_tar_len, _, _, _ = load_inputs_twitter(
             test_path,
             word_id_mapping,
@@ -251,6 +258,10 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                 max_ty = ty
                 max_py = py
                 max_prob = p
+
+        if FLAGS.writable == 1:
+            with open(FLAGS.results_file, "a") as results:
+                results.write("---\nLCR-Rot-Hop++. Train accuracy: {:.6f}. Test accuracy: {:.6f}. Combined accuracy: {:.6f}\n\n".format(trainacc, acc, totalacc))
 
         P = precision_score(max_ty, max_py, average=None)
         R = recall_score(max_ty, max_py, average=None)
