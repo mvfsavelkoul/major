@@ -53,9 +53,9 @@ def split_data():
     train_sentences = train_root.findall("sentence")
 
     # Load testing data.
-    test_tree = ET.parse(FLAGS.test_data)
-    test_root = test_tree.getroot()
-    test_sentences = test_root.findall("sentence")
+    # test_tree = ET.parse(FLAGS.test_data)
+    # test_root = test_tree.getroot()
+    # test_sentences = test_root.findall("sentence")
 
     for i in range(10, 101, round(100/FLAGS.splits)):
         # Split train data.
@@ -69,14 +69,14 @@ def split_data():
             tSplit.write(sentencesXML)
 
         # Split test data
-        numSen = round((i/100) * len(test_sentences))
-        sentences = ET.Element('sentences')
-        for j in range(numSen):
-            sentence = test_sentences[j]
-            sentences.append(sentence)
-        sentencesXML = ET.tostring(sentences, encoding="unicode")
-        with open("data/programGeneratedData/splits/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+"_"+str(i)+".xml", "w") as tSplit:
-            tSplit.write(sentencesXML)
+        # numSen = round((i/100) * len(test_sentences))
+        # sentences = ET.Element('sentences')
+        # for j in range(numSen):
+        #    sentence = test_sentences[j]
+        #    sentences.append(sentence)
+        # sentencesXML = ET.tostring(sentences, encoding="unicode")
+        # with open("data/programGeneratedData/splits/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+"_"+str(i)+".xml", "w") as tSplit:
+        #    tSplit.write(sentencesXML)
 
 # Run main function.
 def run_main(splitpercent):
@@ -98,7 +98,7 @@ def run_main(splitpercent):
 
     # retrieve data and wordembeddings
     FLAGS.train_data = "data/programGeneratedData/splits/"+FLAGS.source_domain+"_train_"+str(FLAGS.year)+"_"+str(splitpercent)+".xml"
-    FLAGS.test_data = "data/programGeneratedData/splits/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+"_"+str(splitpercent)+".xml"
+    # FLAGS.test_data = "data/programGeneratedData/splits/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+"_"+str(splitpercent)+".xml"
     train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, loadData)
 
     #print(test_size)
