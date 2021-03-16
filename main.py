@@ -5,6 +5,7 @@
 
 import tensorflow as tf
 import lcrModel
+import lcrModelAlt_hierarchial_v4
 import lcrModelInverse
 import lcrModelAlt
 import cabascModel
@@ -29,6 +30,7 @@ def main(_):
     runLCRROT = False
     runLCRROTINVERSE = False
     runLCRROTALT = True
+    runLCRROTALTV4 = False
     runSVM = False
 
     weightanalysis = False
@@ -79,6 +81,11 @@ def main(_):
     # LCR-Rot-hop model
     if runLCRROTALT == True:
         _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
+        tf.reset_default_graph()
+
+    # LCR-Rot-Hop++
+    if runLCRROTALTV4 == True:
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
         tf.reset_default_graph()
 
     # CABASC model
