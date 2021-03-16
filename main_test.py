@@ -6,6 +6,7 @@
 
 import tensorflow as tf
 import lcrModel
+import lcrModelAlt_hierarchical_v4
 import lcrModelInverse
 import lcrModelAlt
 import cabascModel
@@ -29,6 +30,7 @@ import sys
 def main(_):
     splitData = True
     lcrRotHop = True
+    altv4 = True
     writeResult = True
 
     if splitData:
@@ -36,14 +38,15 @@ def main(_):
 
     if lcrRotHop:
         if writeResult:
-            os.remove(FLAGS.results_file)
+            with open(FLAGS.results_file, "w") as results:
+                results.write("")
             FLAGS.writable = 1
         for i in range(10, 101, round(100/FLAGS.splits)):
             print("Running " + FLAGS.source_domain + " to " + FLAGS.target_domain + " at " + str(i) + "%...")
             if FLAGS.writable == 1:
                 with open(FLAGS.results_file, "a") as results:
                     results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + " at " + str(i) + "%\n---\n")
-            run_main(i)
+            run_main(i, altv4)
     FLAGS.writable = 0
 # Split data.
 def split_data():
@@ -79,14 +82,19 @@ def split_data():
         #    tSplit.write(sentencesXML)
 
 # Run main function.
-def run_main(splitpercent):
+def run_main(splitpercent, altv4):
     loadData = True
     useOntology = False
     runCABASC = False
     runLCRROT = False
     runLCRROTINVERSE = False
     runLCRROTALT = True
+    runLCRROTALTV4 = False
     runSVM = False
+
+    if altv4:
+        runLCRROTALT = False
+        runLCRROTALTV4 = True
 
     weightanalysis = False
 
@@ -142,6 +150,11 @@ def run_main(splitpercent):
     # LCR-Rot-hop model
     if runLCRROTALT == True:
         _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt.main(FLAGS.train_path, test, accuracyOnt, test_size, remaining_size)
+        tf.reset_default_graph()
+
+    # LCR-Rot-Hop++
+    if runLCRROTALTV4 == True:
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
         tf.reset_default_graph()
 
     # CABASC model
