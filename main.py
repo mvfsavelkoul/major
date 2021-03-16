@@ -5,14 +5,13 @@
 
 import tensorflow as tf
 import lcrModel
+import lcrModelAlt_hierarchical_v4
 import lcrModelInverse
 import lcrModelAlt
 import cabascModel
 import svmModel
 from OntologyReasoner import OntReasoner
 from loadData import *
-import nltk
-nltk.download('punkt')
 
 #import parameter configuration and data paths
 from config import *
@@ -21,14 +20,18 @@ from config import *
 import numpy as np
 import sys
 
+import nltk
+
 # main function
 def main(_):
     loadData = True
-    useOntology = True
+    useOntology = False
     runCABASC = False
     runLCRROT = False
+    #aangepast LCRROT sizes
     runLCRROTINVERSE = False
-    runLCRROTALT = True
+    runLCRROTALT = False
+    runLCRROTALTV4 = True
     runSVM = False
 
     weightanalysis = False
@@ -41,9 +44,7 @@ def main(_):
     
     # retrieve data and wordembeddings
     train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, loadData)
-
-    #print(test_size)
-    # Why?
+    print(test_size)
     remaining_size = 250
     accuracyOnt = 0.87
 
@@ -68,12 +69,12 @@ def main(_):
 
     # LCR-Rot model
     if runLCRROT == True:
-        _, pred1, fw1, bw1, tl1, tr1, sent, target, true = lcrModel.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
+        _, pred1, fw1, bw1, tl1, tr1, sent, target, true = lcrModel.main(FLAGS.train_path,test, accuracyOnt, len(test_size), 250)
         tf.reset_default_graph()
 
     # LCR-Rot-inv model
     if runLCRROTINVERSE == True:
-        lcrModelInverse.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
+        lcrModelInverse.main(FLAGS.train_path,test, accuracyOnt, len(test_size), remaining_size)
         tf.reset_default_graph()
 
     # LCR-Rot-hop model
@@ -81,9 +82,15 @@ def main(_):
         _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
         tf.reset_default_graph()
 
+    #MARIA
+    if runLCRROTALTV4 == True:
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
+        tf.reset_default_graph()
+
+
     # CABASC model
     if runCABASC == True:
-        _, pred3, weights = cabascModel.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
+        _, pred3, weights = cabascModel.main(FLAGS.train_path,test, accuracyOnt, len(test_size), remaining_size)
         if weightanalysis and runLCRROT and runLCRROTALT:
             outF= open('sentence_analysis.txt', "w")
             dif = np.subtract(pred3, pred1)
