@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import os, sys
+import os
+import sys
+
 sys.path.append(os.getcwd())
-import tensorflow as tf
 from sklearn.metrics import precision_score, recall_score, f1_score
 from nn_layer import softmax_layer, bi_dynamic_rnn, reduce_mean_with_len
 from att_layer_maria import bilinear_attention_layer, dot_produce_attention_layer
@@ -12,6 +13,7 @@ from utils import load_w2v, batch_index, load_inputs_twitter
 import numpy as np
 
 tf.set_random_seed(1)
+
 
 def lcr_rot(input_fw, input_bw, sen_len_fw, sen_len_bw, target, sen_len_tr, keep_prob1, keep_prob2, l2, _id='all'):
     print('I am lcr_rot_alt from Maria.')
@@ -41,61 +43,78 @@ def lcr_rot(input_fw, input_bw, sen_len_fw, sen_len_bw, target, sen_len_tr, keep
     outputs_t_r = tf.squeeze(outputs_t_r_init)
 
     # attention target left
-    att_t_l = bilinear_attention_layer(hiddens_t, outputs_t_l, sen_len_tr, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'l')
+    att_t_l = bilinear_attention_layer(hiddens_t, outputs_t_l, sen_len_tr, 2 * FLAGS.n_hidden, l2, FLAGS.random_base,
+                                       'l')
     outputs_l_init = tf.matmul(att_t_l, hiddens_t)
     outputs_l = tf.squeeze(outputs_l_init)
     # attention target right
-    att_t_r = bilinear_attention_layer(hiddens_t, outputs_t_r, sen_len_tr, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'r')
+    att_t_r = bilinear_attention_layer(hiddens_t, outputs_t_r, sen_len_tr, 2 * FLAGS.n_hidden, l2, FLAGS.random_base,
+                                       'r')
     outputs_r_init = tf.matmul(att_t_r, hiddens_t)
     outputs_r = tf.squeeze(outputs_r_init)
 
     outputs_init_context = tf.concat([outputs_t_l_init, outputs_t_r_init], 1)
     outputs_init_target = tf.concat([outputs_l_init, outputs_r_init], 1)
-    att_outputs_context = dot_produce_attention_layer(outputs_init_context, None, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'fin1')
-    att_outputs_target = dot_produce_attention_layer(outputs_init_target, None, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'fin2')
-    outputs_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:,:,0], 2), outputs_l_init))
-    outputs_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:,:,1], 2), outputs_r_init))
-    outputs_t_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:,:,0], 2), outputs_t_l_init))
-    outputs_t_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:,:,1], 2), outputs_t_r_init))
+    att_outputs_context = dot_produce_attention_layer(outputs_init_context, None, 2 * FLAGS.n_hidden, l2,
+                                                      FLAGS.random_base, 'fin1')
+    att_outputs_target = dot_produce_attention_layer(outputs_init_target, None, 2 * FLAGS.n_hidden, l2,
+                                                     FLAGS.random_base, 'fin2')
+    outputs_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:, :, 0], 2), outputs_l_init))
+    outputs_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:, :, 1], 2), outputs_r_init))
+    outputs_t_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:, :, 0], 2), outputs_t_l_init))
+    outputs_t_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:, :, 1], 2), outputs_t_r_init))
 
     for i in range(2):
         # attention target
-        att_l = bilinear_attention_layer(hiddens_l, outputs_l, sen_len_fw, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'tl'+str(i))
+        att_l = bilinear_attention_layer(hiddens_l, outputs_l, sen_len_fw, 2 * FLAGS.n_hidden, l2, FLAGS.random_base,
+                                         'tl' + str(i))
         outputs_t_l_init = tf.matmul(att_l, hiddens_l)
         outputs_t_l = tf.squeeze(outputs_t_l_init)
 
-        att_r = bilinear_attention_layer(hiddens_r, outputs_r, sen_len_bw, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'tr'+str(i))
+        att_r = bilinear_attention_layer(hiddens_r, outputs_r, sen_len_bw, 2 * FLAGS.n_hidden, l2, FLAGS.random_base,
+                                         'tr' + str(i))
         outputs_t_r_init = tf.matmul(att_r, hiddens_r)
         outputs_t_r = tf.squeeze(outputs_t_r_init)
 
         # attention left
-        att_t_l = bilinear_attention_layer(hiddens_t, outputs_t_l, sen_len_tr, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'l'+str(i))
+        att_t_l = bilinear_attention_layer(hiddens_t, outputs_t_l, sen_len_tr, 2 * FLAGS.n_hidden, l2,
+                                           FLAGS.random_base, 'l' + str(i))
         outputs_l_init = tf.matmul(att_t_l, hiddens_t)
         outputs_l = tf.squeeze(outputs_l_init)
 
         # attention right
-        att_t_r = bilinear_attention_layer(hiddens_t, outputs_t_r, sen_len_tr, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'r'+str(i))
+        att_t_r = bilinear_attention_layer(hiddens_t, outputs_t_r, sen_len_tr, 2 * FLAGS.n_hidden, l2,
+                                           FLAGS.random_base, 'r' + str(i))
         outputs_r_init = tf.matmul(att_t_r, hiddens_t)
         outputs_r = tf.squeeze(outputs_r_init)
 
         outputs_init_context = tf.concat([outputs_t_l_init, outputs_t_r_init], 1)
         outputs_init_target = tf.concat([outputs_l_init, outputs_r_init], 1)
-        att_outputs_context = dot_produce_attention_layer(outputs_init_context, None, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'fin1'+str(i))
-        att_outputs_target = dot_produce_attention_layer(outputs_init_target, None, 2 * FLAGS.n_hidden, l2, FLAGS.random_base, 'fin2'+str(i))
-        outputs_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:,:,0], 2), outputs_l_init))
-        outputs_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:,:,1], 2), outputs_r_init))
-        outputs_t_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:,:,0], 2), outputs_t_l_init))
-        outputs_t_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:,:,1], 2), outputs_t_r_init))
+        att_outputs_context = dot_produce_attention_layer(outputs_init_context, None, 2 * FLAGS.n_hidden, l2,
+                                                          FLAGS.random_base, 'fin1' + str(i))
+        att_outputs_target = dot_produce_attention_layer(outputs_init_target, None, 2 * FLAGS.n_hidden, l2,
+                                                         FLAGS.random_base, 'fin2' + str(i))
+        outputs_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:, :, 0], 2), outputs_l_init))
+        outputs_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_target[:, :, 1], 2), outputs_r_init))
+        outputs_t_l = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:, :, 0], 2), outputs_t_l_init))
+        outputs_t_r = tf.squeeze(tf.matmul(tf.expand_dims(att_outputs_context[:, :, 1], 2), outputs_t_r_init))
 
     outputs_fin = tf.concat([outputs_l, outputs_r, outputs_t_l, outputs_t_r], 1)
     prob = softmax_layer(outputs_fin, 8 * FLAGS.n_hidden, FLAGS.random_base, keep_prob2, l2, FLAGS.n_class)
     return prob, att_l, att_r, att_t_l, att_t_r
 
-def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning_rate=0.09, keep_prob=0.3, momentum=0.85, l2=0.00001):
-    print_config()
+
+def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning_rate=0.09, keep_prob=0.3,
+         momentum=0.85, l2=0.00001):
+    # print_config()
     with tf.device('/gpu:1'):
-        word_id_mapping, w2v = load_w2v(FLAGS.embedding_path, FLAGS.embedding_dim)
-        word_embedding = tf.constant(w2v, name='word_embedding')
+        # Separate train and test embeddings.
+        # word_id_mapping, w2v = load_w2v(FLAGS.embedding_path, FLAGS.embedding_dim)
+        # word_embedding = tf.constant(w2v, name='word_embedding')
+        train_word_id_mapping, train_w2v = load_w2v(FLAGS.train_embedding, FLAGS.embedding_dim)
+        train_word_embedding = tf.constant(train_w2v, dtype=np.float32, name='train_word_embedding')
+        test_word_id_mapping, test_w2v = load_w2v(FLAGS.test_embedding, FLAGS.embedding_dim)
+        test_word_embedding = tf.constant(test_w2v, dtype=np.float32, name='test_word_embedding')
 
         keep_prob1 = tf.placeholder(tf.float32)
         keep_prob2 = tf.placeholder(tf.float32)
@@ -111,17 +130,20 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
             target_words = tf.placeholder(tf.int32, [None, FLAGS.max_target_len])
             tar_len = tf.placeholder(tf.int32, [None])
 
-        inputs_fw = tf.nn.embedding_lookup(word_embedding, x)
-        inputs_bw = tf.nn.embedding_lookup(word_embedding, x_bw)
-        target = tf.nn.embedding_lookup(word_embedding, target_words)
+        # Educated guess that this is for training.
+        inputs_fw = tf.nn.embedding_lookup(train_word_embedding, x)
+        inputs_bw = tf.nn.embedding_lookup(train_word_embedding, x_bw)
+        target = tf.nn.embedding_lookup(train_word_embedding, target_words)
 
         alpha_fw, alpha_bw = None, None
-        prob, alpha_fw, alpha_bw, alpha_t_l, alpha_t_r = lcr_rot(inputs_fw, inputs_bw, sen_len, sen_len_bw, target, tar_len, keep_prob1, keep_prob2, l2, 'all')
+        prob, alpha_fw, alpha_bw, alpha_t_l, alpha_t_r = lcr_rot(inputs_fw, inputs_bw, sen_len, sen_len_bw, target,
+                                                                 tar_len, keep_prob1, keep_prob2, l2, 'all')
 
         loss = loss_func(y, prob)
         acc_num, acc_prob = acc_func(y, prob)
         global_step = tf.Variable(0, name='tr_global_step', trainable=False)
-        optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate,  momentum=momentum).minimize(loss, global_step=global_step)
+        optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=momentum).minimize(loss,
+                                                                                                        global_step=global_step)
         # optimizer = train_func(loss, FLAGS.learning_rate, global_step)
         true_y = tf.argmax(y, 1)
         pred_y = tf.argmax(prob, 1)
@@ -165,7 +187,7 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                 results.write("Train data. ")
         tr_x, tr_sen_len, tr_x_bw, tr_sen_len_bw, tr_y, tr_target_word, tr_tar_len, _, _, _ = load_inputs_twitter(
             train_path,
-            word_id_mapping,
+            train_word_id_mapping,
             FLAGS.max_sentence_len,
             'TC',
             is_r,
@@ -177,7 +199,7 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                 results.write("Test data. ")
         te_x, te_sen_len, te_x_bw, te_sen_len_bw, te_y, te_target_word, te_tar_len, _, _, _ = load_inputs_twitter(
             test_path,
-            word_id_mapping,
+            test_word_id_mapping,
             FLAGS.max_sentence_len,
             'TC',
             is_r,
@@ -207,14 +229,16 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         step = None
         for i in range(FLAGS.n_iter):
             trainacc, traincnt = 0., 0
-            for train, numtrain in get_batch_data(tr_x, tr_sen_len, tr_x_bw, tr_sen_len_bw, tr_y, tr_target_word, tr_tar_len,
-                                           FLAGS.batch_size, keep_prob, keep_prob):
+            for train, numtrain in get_batch_data(tr_x, tr_sen_len, tr_x_bw, tr_sen_len_bw, tr_y, tr_target_word,
+                                                  tr_tar_len,
+                                                  FLAGS.batch_size, keep_prob, keep_prob):
                 # _, step = sess.run([optimizer, global_step], feed_dict=train)
-                _, step, summary, _trainacc = sess.run([optimizer, global_step, train_summary_op, acc_num], feed_dict=train)
+                _, step, summary, _trainacc = sess.run([optimizer, global_step, train_summary_op, acc_num],
+                                                       feed_dict=train)
                 train_summary_writer.add_summary(summary, step)
                 # embed_update = tf.assign(word_embedding, tf.concat(0, [tf.zeros([1, FLAGS.embedding_dim]), word_embedding[1:]]))
                 # sess.run(embed_update)
-                trainacc += _trainacc            # saver.save(sess, save_dir, global_step=step)
+                trainacc += _trainacc  # saver.save(sess, save_dir, global_step=step)
                 traincnt += numtrain
 
             acc, cost, cnt = 0., 0., 0
@@ -230,7 +254,8 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                     tl += list(_tl)
                     tr += list(_tr)
                 else:
-                    _loss, _acc, _ty, _py, _p, _fw, _bw, _tl, _tr = sess.run([loss, acc_num, true_y, pred_y, prob, alpha_fw, alpha_bw, alpha_t_l, alpha_t_r], feed_dict=test)
+                    _loss, _acc, _ty, _py, _p, _fw, _bw, _tl, _tr = sess.run(
+                        [loss, acc_num, true_y, pred_y, prob, alpha_fw, alpha_bw, alpha_t_l, alpha_t_r], feed_dict=test)
                 ty = np.asarray(_ty)
                 py = np.asarray(_py)
                 p = np.asarray(_p)
@@ -241,12 +266,16 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                 acc += _acc
                 cost += _loss * num
                 cnt += num
-            print('all samples={}, correct prediction={}'.format(cnt, acc))
+            print('All samples={}, correct prediction={}'.format(cnt, acc))
             trainacc = trainacc / traincnt
             acc = acc / cnt
             totalacc = ((acc * remaining_size) + (accuracyOnt * (test_size - remaining_size))) / test_size
             cost = cost / cnt
-            print('Iter {}: mini-batch loss={:.6f}, train acc={:.6f}, test acc={:.6f}, combined acc={:.6f}'.format(i, cost,trainacc, acc, totalacc))
+            print('Iter {}: mini-batch loss={:.6f}, train acc={:.6f}, test acc={:.6f}, combined acc={:.6f}'.format(i,
+                                                                                                                   cost,
+                                                                                                                   trainacc,
+                                                                                                                   acc,
+                                                                                                                   totalacc))
             summary = sess.run(test_summary_op, feed_dict={test_loss: cost, test_acc: acc})
             test_summary_writer.add_summary(summary, step)
             if acc > max_acc:
@@ -261,7 +290,12 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
 
         if FLAGS.writable == 1:
             with open(FLAGS.results_file, "a") as results:
-                results.write("---\nLCR-Rot-Hop++. Train accuracy: {:.6f}. Test accuracy: {:.6f}. Combined accuracy: {:.6f}\n\n".format(trainacc, acc, totalacc))
+                results.write(
+                    "---\nLCR-Rot-Hop++. Train accuracy: {:.6f}, Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n".format(
+                        trainacc, acc, totalacc))
+                maxtotalacc = ((max_acc * remaining_size) + (accuracyOnt * (test_size - remaining_size))) / test_size
+                results.write("Maximum. Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n\n").format(max_acc,
+                                                                                                      maxtotalacc)
 
         P = precision_score(max_ty, max_py, average=None)
         R = recall_score(max_ty, max_py, average=None)
@@ -288,15 +322,17 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
 
         print('Optimization Finished! Max acc={}'.format(max_acc))
 
-        print('Learning_rate={}, iter_num={}, batch_size={}, hidden_num={}, l2={}'.format(
-            FLAGS.learning_rate,
-            FLAGS.n_iter,
-            FLAGS.batch_size,
-            FLAGS.n_hidden,
-            FLAGS.l2_reg
-        ))
+        # print('Learning_rate={}, iter_num={}, batch_size={}, hidden_num={}, l2={}'.format(
+        #    FLAGS.learning_rate,
+        #    FLAGS.n_iter,
+        #    FLAGS.batch_size,
+        #    FLAGS.n_hidden,
+        #    FLAGS.l2_reg
+        # ))
 
-        return max_acc, np.where(np.subtract(max_py, max_ty) == 0, 0, 1), max_fw.tolist(), max_bw.tolist(), max_tl.tolist(), max_tr.tolist()
+        return max_acc, np.where(np.subtract(max_py, max_ty) == 0, 0,
+                                 1), max_fw.tolist(), max_bw.tolist(), max_tl.tolist(), max_tr.tolist()
+
 
 if __name__ == '__main__':
     tf.app.run()

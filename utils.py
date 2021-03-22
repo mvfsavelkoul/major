@@ -2,7 +2,9 @@
 # encoding: utf-8
 
 import numpy as np
+
 from config import *
+
 
 def batch_index(length, batch_size, n_iter=100, is_shuffle=True):
     index = list(range(length))
@@ -94,7 +96,8 @@ def change_y_to_onehot(y):
     if FLAGS.writable == 1:
         count = Counter(y)
         with open(FLAGS.results_file, "a") as results:
-            results.write("Positive: "+str(count['1'])+", Negative: "+str(count['-1'])+", Neutral: "+str(count['0'])+", Total: "+str(sum(count.values()))+"\n")
+            results.write("Positive: " + str(count['1']) + ", Negative: " + str(count['-1']) + ", Neutral: " + str(
+                count['0']) + ", Total: " + str(sum(count.values())) + "\n")
     print(Counter(y))
     class_set = set(y)
     n_class = len(class_set)
@@ -113,7 +116,7 @@ def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=T
         word_to_id = load_word_id_mapping(word_id_file)
     else:
         word_to_id = word_id_file
-    print('load word-to-id done!')
+    print('Load word-to-id done!')
 
     x, y, sen_len = [], [], []
     x_r, sen_len_r = [], []
@@ -179,7 +182,8 @@ def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=T
                np.asarray(sen_len_r), np.asarray(y)
     elif type_ == 'TC':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), np.asarray(sen_len_r), \
-               np.asarray(y), np.asarray(target_words), np.asarray(tar_len), np.asarray(all_sent), np.asarray(all_target), np.asarray(all_y)
+               np.asarray(y), np.asarray(target_words), np.asarray(tar_len), np.asarray(all_sent), np.asarray(
+            all_target), np.asarray(all_y)
     elif type_ == 'IAN':
         return np.asarray(x), np.asarray(sen_len), np.asarray(target_words), \
                np.asarray(tar_len), np.asarray(y)
@@ -257,6 +261,7 @@ def load_inputs_twitter_(input_file, word_id_file, sentence_len, type_='', is_r=
                np.asarray(y), np.asarray(target_words), np.asarray(tar_len)
     else:
         return np.asarray(x), np.asarray(sen_len), np.asarray(y)
+
 
 def extract_aspect_to_id(input_file, aspect2id_file):
     dest_fp = open(aspect2id_file, 'w')
@@ -426,6 +431,7 @@ def load_inputs_document_nohn(input_file, word_id_file, max_sen_len, _type=None,
 def load_sentence(src_file, word2id, max_sen_len, freq=5):
     sf = open(src_file)
     x1, x2, len1, len2, y = [], [], [], [], []
+
     def get_q_id(q):
         i = 0
         tx = []
@@ -435,6 +441,7 @@ def load_sentence(src_file, word2id, max_sen_len, freq=5):
                 i += 1
         tx += ([0] * (max_sen_len - i))
         return tx, i
+
     for line in sf:
         line = line.lower().split(' || ')
         q1 = line[0].split()
@@ -455,6 +462,7 @@ def load_sentence(src_file, word2id, max_sen_len, freq=5):
     len2 = np.asarray(len2, dtype=np.int32)
     y = change_y_to_onehot(y)
     return x1, x2, len1, len2, y
+
 
 def load_inputs_cabasc(input_file, word_id_file, sentence_len, type_='', is_r=True, target_len=10, encoding='utf8'):
     if type(word_id_file) is str:
@@ -486,7 +494,7 @@ def load_inputs_cabasc(input_file, word_id_file, sentence_len, type_='', is_r=Tr
         y.append(lines[i + 2].strip().split()[0])
 
         words = lines[i].lower().split()
-        words_l, words_r, sent_short, sent= [], [], [], []
+        words_l, words_r, sent_short, sent = [], [], [], []
         flag = True
         for word in words:
             if word == '$t$':
@@ -500,8 +508,8 @@ def load_inputs_cabasc(input_file, word_id_file, sentence_len, type_='', is_r=Tr
                     words_r.append(word_to_id[word])
         if type_ == 'TD' or type_ == 'TC':
 
-            mult = [1]*sentence_len
-            mult[len(words_l):len(words_l)+l] = [0.5] * l
+            mult = [1] * sentence_len
+            mult[len(words_l):len(words_l) + l] = [0.5] * l
             mult_mask.append(mult)
 
             sent_short.extend(words_l + target_word + words_r)
@@ -524,18 +532,19 @@ def load_inputs_cabasc(input_file, word_id_file, sentence_len, type_='', is_r=Tr
             words = words[:sentence_len]
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
-        if i == 0 :
-            print('words left:{} \n length left: {} \n words right: {}\n length left: {}\n target: {}\n target length:{} \n sentiment: {}\n sentence:{}\n mask:{}'.format(
-                x,
-                sen_len,
-                x_r,
-                sen_len_r,
-                target_words,
-                tar_len,
-                y,
-                sent_final,
-                mult_mask
-            ))
+        if i == 0:
+            print(
+                'words left:{} \n length left: {} \n words right: {}\n length left: {}\n target: {}\n target length:{} \n sentiment: {}\n sentence:{}\n mask:{}'.format(
+                    x,
+                    sen_len,
+                    x_r,
+                    sen_len_r,
+                    target_words,
+                    tar_len,
+                    y,
+                    sent_final,
+                    mult_mask
+                ))
 
     y = change_y_to_onehot(y)
     if type_ == 'TD':
@@ -543,12 +552,14 @@ def load_inputs_cabasc(input_file, word_id_file, sentence_len, type_='', is_r=Tr
                np.asarray(sen_len_r), np.asarray(y)
     elif type_ == 'TC':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), np.asarray(sen_len_r), \
-               np.asarray(y), np.asarray(target_words), np.asarray(tar_len), np.asarray(sent_short_final), np.asarray(sent_final), np.asarray(mult_mask)
+               np.asarray(y), np.asarray(target_words), np.asarray(tar_len), np.asarray(sent_short_final), np.asarray(
+            sent_final), np.asarray(mult_mask)
     elif type_ == 'IAN':
         return np.asarray(x), np.asarray(sen_len), np.asarray(target_words), \
                np.asarray(tar_len), np.asarray(y)
     else:
         return np.asarray(x), np.asarray(sen_len), np.asarray(y)
+
 
 def load_inputs_full(input_file, word_id_file, sentence_len, type_='', is_r=True, target_len=10, encoding='utf8'):
     if type(word_id_file) is str:
@@ -604,13 +615,12 @@ def load_inputs_full(input_file, word_id_file, sentence_len, type_='', is_r=True
                 tmp.reverse()
             sen_len_r.append(len(tmp))
             x_r.append(tmp + [0] * (sentence_len - len(tmp)))
-            sent_final.append(sent+ [0] * (sentence_len - len(sent)))
+            sent_final.append(sent + [0] * (sentence_len - len(sent)))
         else:
             words = words_l + target_word + words_r
             words = words[:sentence_len]
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
-            
 
     y = change_y_to_onehot(y)
     if type_ == 'TD':

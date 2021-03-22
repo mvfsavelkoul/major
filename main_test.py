@@ -4,18 +4,16 @@
 # https://github.com/NUSTM/ABSC
 # https://github.com/ofwallaart/HAABSA
 
-import tensorflow as tf
+import nltk
+
+import cabascModel
 import lcrModel
+import lcrModelAlt
 import lcrModelAlt_hierarchical_v4
 import lcrModelInverse
-import lcrModelAlt
-import cabascModel
 import svmModel
 from OntologyReasoner import OntReasoner
 from loadData import *
-import nltk
-import xml.etree.ElementTree as ET
-import os
 
 nltk.download('punkt')
 
@@ -24,77 +22,86 @@ from config import *
 
 # import modules
 import numpy as np
-import sys
+
 
 # Main function.
 def main(_):
-    splitData = True
-    lcrRotHop = True
     altv4 = True
+    rest_lapt = True
+    lapt_lapt = True
+    rest_lapt_lapt = False
     writeResult = True
 
-    if splitData:
-        split_data()
+    if altv4:
+        FLAGS.train_path = "data/programGeneratedData/BERT/" + str(
+            FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
+        FLAGS.test_path = "data/programGeneratedData/BERT/" + str(
+            FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
 
-    if lcrRotHop:
-        if writeResult:
-            with open(FLAGS.results_file, "w") as results:
-                results.write("")
-            FLAGS.writable = 1
-        for i in range(10, 101, round(100/FLAGS.splits)):
-            print("Running " + FLAGS.source_domain + " to " + FLAGS.target_domain + " at " + str(i) + "%...")
-            if FLAGS.writable == 1:
-                with open(FLAGS.results_file, "a") as results:
-                    results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + " at " + str(i) + "%\n---\n")
-            run_main(i, altv4)
-    FLAGS.writable = 0
-# Split data.
-def split_data():
-    # Load training data.
-    train_tree = ET.parse(FLAGS.train_data)
-    train_root = train_tree.getroot()
-    train_sentences = train_root.findall("sentence")
+        # Restaurant hyper parameters.
+        FLAGS.learning_rate = 0.02
+        FLAGS.keep_prob1 = 0.3
+        FLAGS.keep_prob2 = 0.3
+        FLAGS.momentum = 0.95
+        FLAGS.l2_reg = 0.00001
+        if rest_lapt:
+            # Run restaurant-laptop.
+            FLAGS.source_domain = "restaurant"
+            FLAGS.target_domain = "laptop"
+            if writeResult:
+                with open(FLAGS.results_file, "w") as results:
+                    results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + "\n---\n")
+                FLAGS.writable = 1
+            run_main()
 
-    # Load testing data.
-    # test_tree = ET.parse(FLAGS.test_data)
-    # test_root = test_tree.getroot()
-    # test_sentences = test_root.findall("sentence")
+        # Laptop hyper parameters.
+        FLAGS.learning_rate = 0.02
+        FLAGS.keep_prob1 = 0.3
+        FLAGS.keep_prob2 = 0.3
+        FLAGS.momentum = 0.95
+        FLAGS.l2_reg = 0.00001
+        if lapt_lapt:
+            # Run laptop-laptop for different sizes.
+            FLAGS.source_domain = "laptop"
+            FLAGS.target_domain = "laptop"
+            FLAGS.train_data = "data/externalData/" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + ".xml"
+            FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
+                FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+            if writeResult:
+                FLAGS.results_file = "data/programGeneratedData/" + str(
+                    FLAGS.embedding_dim) + "results_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
+                    FLAGS.year) + ".txt"
+                with open(FLAGS.results_file, "w") as results:
+                    results.write("")
+                FLAGS.writable = 1
+            for i in range(1, 10):
+                print("Running " + FLAGS.source_domain + " to " + FLAGS.target_domain + " for " + str(
+                    250 * i) + " aspects...")
+                if FLAGS.writable == 1:
+                    with open(FLAGS.results_file, "a") as results:
+                        results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + " for " + str(
+                            250 * i) + " aspects\n---\n")
+                FLAGS.train_path = "data/programGeneratedData/BERT/splits/" + str(
+                    FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT_" + str(
+                    250 * i) + ".txt"
+                run_main()
 
-    for i in range(10, 101, round(100/FLAGS.splits)):
-        # Split train data.
-        numSen = round((i/100) * len(train_sentences))
-        sentences = ET.Element('sentences')
-        for j in range(numSen):
-            sentence = train_sentences[j]
-            sentences.append(sentence)
-        sentencesXML = ET.tostring(sentences, encoding="unicode")
-        with open("data/programGeneratedData/splits/"+FLAGS.source_domain+"_train_"+str(FLAGS.year)+"_"+str(i)+".xml", "w") as tSplit:
-            tSplit.write(sentencesXML)
+        if rest_lapt_lapt:
+            # Run fine-tuned restaurant-laptop for different sizes.
+            print()
+        FLAGS.writable = 0
 
-        # Split test data
-        # numSen = round((i/100) * len(test_sentences))
-        # sentences = ET.Element('sentences')
-        # for j in range(numSen):
-        #    sentence = test_sentences[j]
-        #    sentences.append(sentence)
-        # sentencesXML = ET.tostring(sentences, encoding="unicode")
-        # with open("data/programGeneratedData/splits/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+"_"+str(i)+".xml", "w") as tSplit:
-        #    tSplit.write(sentencesXML)
 
 # Run main function.
-def run_main(splitpercent, altv4):
-    loadData = True
+def run_main():
+    loadData = False
     useOntology = False
     runCABASC = False
     runLCRROT = False
     runLCRROTINVERSE = False
-    runLCRROTALT = True
-    runLCRROTALTV4 = False
+    runLCRROTALT = False
+    runLCRROTALTV4 = True
     runSVM = False
-
-    if altv4:
-        runLCRROTALT = False
-        runLCRROTALTV4 = True
 
     weightanalysis = False
 
@@ -105,14 +112,12 @@ def run_main(splitpercent, altv4):
         backup = False
 
     # retrieve data and wordembeddings
-    FLAGS.train_data = "data/programGeneratedData/splits/"+FLAGS.source_domain+"_train_"+str(FLAGS.year)+"_"+str(splitpercent)+".xml"
-    # FLAGS.test_data = "data/programGeneratedData/splits/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+"_"+str(splitpercent)+".xml"
     train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, loadData)
 
-    #print(test_size)
-    # Why?
-    remaining_size = 250
-    accuracyOnt = 0.87
+    # print(test_size)
+    # Was 250, 0.87
+    remaining_size = test_size
+    accuracyOnt = 1.00
 
     if useOntology == True:
         print('Starting Ontology Reasoner')
@@ -120,8 +125,8 @@ def run_main(splitpercent, altv4):
         # out of sample accuracy
         accuracyOnt, remaining_size = Ontology.run(backup, FLAGS.test_path, runSVM)
         # in sample accuracy
-        #Ontology = OntReasoner()
-        #accuracyInSampleOnt, remaining_size = Ontology.run(backup, FLAGS.train_path, runSVM)
+        # Ontology = OntReasoner()
+        # accuracyInSampleOnt, remaining_size = Ontology.run(backup, FLAGS.train_path, runSVM)
         if runSVM == True:
             test = FLAGS.remaining_svm_test_path
         else:
@@ -149,12 +154,18 @@ def run_main(splitpercent, altv4):
 
     # LCR-Rot-hop model
     if runLCRROTALT == True:
-        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt.main(FLAGS.train_path, test, accuracyOnt, test_size, remaining_size)
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt.main(FLAGS.train_path, test, accuracyOnt, test_size, remaining_size,
+                                                        FLAGS.learning_rate, FLAGS.keep_prob1, FLAGS.momentum,
+                                                        FLAGS.l2_reg)
         tf.reset_default_graph()
 
     # LCR-Rot-Hop++
     if runLCRROTALTV4 == True:
-        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path,test, accuracyOnt, test_size, remaining_size)
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path, test, accuracyOnt, test_size,
+                                                                        remaining_size,
+                                                                        FLAGS.learning_rate, FLAGS.keep_prob1,
+                                                                        FLAGS.momentum,
+                                                                        FLAGS.l2_reg)
         tf.reset_default_graph()
 
     # CABASC model

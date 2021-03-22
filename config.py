@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-import tensorflow as tf
 import sys
 
+import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
-#general variables
-tf.app.flags.DEFINE_string("source_domain", "restaurant", "source domain (training set)")
+# general variables
+tf.app.flags.DEFINE_string("source_domain", "laptop", "source domain (training set)")
 tf.app.flags.DEFINE_string("target_domain", "laptop", "target domain (test set)")
 tf.app.flags.DEFINE_integer("year", 2014, "year data set [2014]")
-tf.app.flags.DEFINE_integer('embedding_dim', 300, 'dimension of word embedding')
+tf.app.flags.DEFINE_string("embedding_type", "BERT", "type of embedding used (BERT or glove)")
+tf.app.flags.DEFINE_integer('embedding_dim', 768, 'dimension of word embedding')
 tf.app.flags.DEFINE_integer('batch_size', 20, 'number of example per batch')
 tf.app.flags.DEFINE_integer('n_hidden', 300, 'number of hidden unit')
 tf.app.flags.DEFINE_float('learning_rate', 0.07, 'learning rate')
@@ -20,7 +21,7 @@ tf.app.flags.DEFINE_integer('max_doc_len', 20, 'max number of tokens per sentenc
 tf.app.flags.DEFINE_float('l2_reg', 0.00001, 'l2 regularization')
 tf.app.flags.DEFINE_float('random_base', 0.01, 'initial random base')
 tf.app.flags.DEFINE_integer('display_step', 4, 'number of test display step')
-tf.app.flags.DEFINE_integer('n_iter', 20, 'number of train iter')
+tf.app.flags.DEFINE_integer('n_iter', 15, 'number of train iter')
 tf.app.flags.DEFINE_float('keep_prob1', 0.5, 'dropout keep prob')
 tf.app.flags.DEFINE_float('keep_prob2', 0.5, 'dropout keep prob')
 tf.app.flags.DEFINE_string('t1', 'last', 'type of hidden output')
@@ -28,43 +29,79 @@ tf.app.flags.DEFINE_string('t2', 'last', 'type of hidden output')
 tf.app.flags.DEFINE_integer('n_layer', 3, 'number of stacked rnn')
 tf.app.flags.DEFINE_string('is_r', '1', 'prob')
 tf.app.flags.DEFINE_integer('max_target_len', 19, 'max target length')
-tf.app.flags.DEFINE_integer('splits', 10, 'number of data splits for test')
+tf.app.flags.DEFINE_integer('splits', 9, 'number of data splits for test')
 
-# traindata, testdata adn embeddings
-tf.app.flags.DEFINE_string("train_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'traindata'+str(FLAGS.year)+".txt", "train data path")
-tf.app.flags.DEFINE_string("test_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'testdata'+str(FLAGS.year)+".txt", "formatted test data path")
-tf.app.flags.DEFINE_string("embedding_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'embedding'+str(FLAGS.year)+".txt", "pre-trained glove vectors file path")
-tf.app.flags.DEFINE_string("remaining_test_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'remainingtestdata'+str(FLAGS.year)+".txt", "formatted remaining test data path after ontology")
+# traindata, testdata and embeddings
+tf.app.flags.DEFINE_string("train_path", "data/programGeneratedData/" + str(
+    FLAGS.embedding_dim) + FLAGS.source_domain + "_train_" + str(FLAGS.year) + ".txt", "train data path")
+tf.app.flags.DEFINE_string("test_path", "data/programGeneratedData/" + str(
+    FLAGS.embedding_dim) + FLAGS.target_domain + "_test_" + str(FLAGS.year) + ".txt", "formatted test data path")
+tf.app.flags.DEFINE_string("embedding_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + "embedding" + str(
+                               FLAGS.year) + ".txt", "pre-trained embedding vectors file path")
+tf.app.flags.DEFINE_string("remaining_test_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'remainingtestdata' + str(
+                               FLAGS.year) + ".txt", "formatted remaining test data path after ontology")
 
-#svm traindata, svm testdata
-tf.app.flags.DEFINE_string("train_svm_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'trainsvmdata'+str(FLAGS.year)+".txt", "train data path")
-tf.app.flags.DEFINE_string("test_svm_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'testsvmdata'+str(FLAGS.year)+".txt", "formatted test data path")
-tf.app.flags.DEFINE_string("remaining_svm_test_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'remainingsvmtestdata'+str(FLAGS.year)+".txt", "formatted remaining test data path after ontology")
+# Source and target embedding
+tf.app.flags.DEFINE_string("train_embedding",
+                           "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
+                               FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt",
+                           "source domain pre-trained BERT embeddings")
+tf.app.flags.DEFINE_string("test_embedding",
+                           "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.target_domain + "_" + str(
+                               FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt",
+                           "source domain pre-trained BERT embeddings")
 
-#hyper traindata, hyper testdata
-tf.app.flags.DEFINE_string("hyper_train_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'hypertraindata'+str(FLAGS.year)+".txt", "hyper train data path")
-tf.app.flags.DEFINE_string("hyper_eval_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'hyperevaldata'+str(FLAGS.year)+".txt", "hyper eval data path")
+# svm traindata, svm testdata
+tf.app.flags.DEFINE_string("train_svm_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'trainsvmdata' + str(
+                               FLAGS.year) + ".txt", "train data path")
+tf.app.flags.DEFINE_string("test_svm_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'testsvmdata' + str(
+                               FLAGS.year) + ".txt", "formatted test data path")
+tf.app.flags.DEFINE_string("remaining_svm_test_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'remainingsvmtestdata' + str(
+                               FLAGS.year) + ".txt", "formatted remaining test data path after ontology")
 
-tf.app.flags.DEFINE_string("hyper_svm_train_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'hypertrainsvmdata'+str(FLAGS.year)+".txt", "hyper train svm data path")
-tf.app.flags.DEFINE_string("hyper_svm_eval_path", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+'hyperevalsvmdata'+str(FLAGS.year)+".txt", "hyper eval svm data path")
+# hyper traindata, hyper testdata
+tf.app.flags.DEFINE_string("hyper_train_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'hypertraindata' + str(
+                               FLAGS.year) + ".txt", "hyper train data path")
+tf.app.flags.DEFINE_string("hyper_eval_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'hyperevaldata' + str(
+                               FLAGS.year) + ".txt", "hyper eval data path")
 
-#external data sources
-tf.app.flags.DEFINE_string("pretrain_file", "data/externalData/glove.42B."+str(FLAGS.embedding_dim)+"d.txt", "pre-trained glove vectors file path")
-tf.app.flags.DEFINE_string("train_data", "data/externalData/"+FLAGS.source_domain+"_train_"+str(FLAGS.year)+".xml",
-                    "train data path")
-tf.app.flags.DEFINE_string("test_data", "data/externalData/"+FLAGS.target_domain+"_test_"+str(FLAGS.year)+".xml",
-                    "test data path")
+tf.app.flags.DEFINE_string("hyper_svm_train_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'hypertrainsvmdata' + str(
+                               FLAGS.year) + ".txt", "hyper train svm data path")
+tf.app.flags.DEFINE_string("hyper_svm_eval_path",
+                           "data/programGeneratedData/" + str(FLAGS.embedding_dim) + 'hyperevalsvmdata' + str(
+                               FLAGS.year) + ".txt", "hyper eval svm data path")
+
+# external data sources
+tf.app.flags.DEFINE_string("pretrain_file", "data/externalData/glove.42B." + str(FLAGS.embedding_dim) + "d.txt",
+                           "pre-trained glove vectors file path")
+tf.app.flags.DEFINE_string("train_data",
+                           "data/externalData/" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + ".xml",
+                           "train data path")
+tf.app.flags.DEFINE_string("test_data",
+                           "data/externalData/" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + ".xml",
+                           "test data path")
 
 tf.app.flags.DEFINE_string('method', 'AE', 'model type: AE, AT or AEAT')
 tf.app.flags.DEFINE_string('prob_file', 'prob1.txt', 'prob')
 tf.app.flags.DEFINE_string('saver_file', 'prob1.txt', 'prob')
 
 # Test results.
-tf.app.flags.DEFINE_string("results_file", "data/programGeneratedData/"+str(FLAGS.embedding_dim)+"results_"+FLAGS.source_domain+"_"+FLAGS.target_domain+"_"+str(FLAGS.year)+".txt", "results for cumulative data test")
+tf.app.flags.DEFINE_string("results_file", "data/programGeneratedData/" + str(
+    FLAGS.embedding_dim) + "results_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
+    FLAGS.year) + ".txt", "results for test")
 tf.app.flags.DEFINE_integer("writable", 0, "one if writable")
 
+
 def print_config():
-    #FLAGS._parse_flags()
+    # FLAGS._parse_flags()
     FLAGS(sys.argv)
     print('\nParameters:')
     for k, v in sorted(tf.app.flags.FLAGS.flag_values_dict().items()):
@@ -103,7 +140,7 @@ def summary_func(loss, acc, test_loss, test_acc, _dir, title, sess):
     test_summary_writer = tf.summary.FileWriter(_dir + '/test')
     validate_summary_writer = tf.summary.FileWriter(_dir + '/validate')
     return train_summary_op, test_summary_op, validate_summary_op, \
-        train_summary_writer, test_summary_writer, validate_summary_writer
+           train_summary_writer, test_summary_writer, validate_summary_writer
 
 
 def saver_func(_dir):
@@ -112,9 +149,3 @@ def saver_func(_dir):
     if not os.path.exists(_dir):
         os.makedirs(_dir)
     return saver
-
-
-
-
-
-

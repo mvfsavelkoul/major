@@ -12,9 +12,14 @@ import nltk
 import re
 import numpy as np
 
+def main(_):
+    out_path = "data/programGeneratedData/BERT/raw_data_restaurant_test_2014.txt"
 
-### Opinion naar AspectTerm
-###
+    with open(out_path, "w") as out:
+        out.write("")
+
+    read_data_2014(FLAGS.train_data, [], {}, [], {}, out_path)
+    read_data_2014(FLAGS.test_data, [], {}, [], {}, out_path)
 
 def window(iterable, size): # stack overflow solution for sliding window
     i = iter(iterable)
@@ -84,7 +89,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
     tree = ET.parse(fname)
     root = tree.getroot()
 
-    outF= open(file_name, "w")
+    outF= open(file_name, "a")
 
     # save all words in source_words (includes duplicates)
     # save all aspects in target_words (includes duplicates)
@@ -170,4 +175,6 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
     print("Conflicts: " + str(countConfl))
     return source_data, source_loc_data, target_data, target_label, max_sent_len, source_loc_data, max_target_len
 
-
+if __name__ == '__main__':
+    # wrapper that handles flag parsing and then dispatches the main
+    tf.app.run()
