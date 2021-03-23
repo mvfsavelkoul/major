@@ -1,19 +1,17 @@
 import os
-import json
+import re
 import xml.etree.ElementTree as ET
 from collections import Counter
-import string
-#import en_core_web_sm
-#en_nlp = en_core_web_sm.load()
+
+import nltk
+
+# import en_core_web_sm
+# en_nlp = en_core_web_sm.load()
 from config import *
 
 
-import nltk
-import re
-import numpy as np
-
 def main(_):
-    out_path = "data/programGeneratedData/BERT/raw_data_restaurant_test_2014.txt"
+    out_path = "data/programGeneratedData/BERT/temp.txt"
 
     with open(out_path, "w") as out:
         out.write("")
@@ -21,7 +19,8 @@ def main(_):
     read_data_2014(FLAGS.train_data, [], {}, [], {}, out_path)
     read_data_2014(FLAGS.test_data, [], {}, [], {}, out_path)
 
-def window(iterable, size): # stack overflow solution for sliding window
+
+def window(iterable, size):  # stack overflow solution for sliding window
     i = iter(iterable)
     win = []
     for e in range(0, size):
@@ -31,20 +30,20 @@ def window(iterable, size): # stack overflow solution for sliding window
         win = win[1:] + [e]
         yield win
 
+
 def _get_data_tuple(sptoks, asp_termIn, label):
     # Find the ids of aspect term
     aspect_is = []
     asp_term = ' '.join(sp for sp in asp_termIn).lower()
-    for _i, group in enumerate(window(sptoks,len(asp_termIn))):
+    for _i, group in enumerate(window(sptoks, len(asp_termIn))):
         if asp_term == ' '.join([g.lower() for g in group]):
-            aspect_is = list(range(_i,_i+len(asp_termIn)))
+            aspect_is = list(range(_i, _i + len(asp_termIn)))
             break
         elif asp_term in ' '.join([g.lower() for g in group]):
-            aspect_is = list(range(_i,_i+len(asp_termIn)))
+            aspect_is = list(range(_i, _i + len(asp_termIn)))
             break
 
-
-    #print(aspect_is)
+    # print(aspect_is)
     pos_info = []
     for _i, sptok in enumerate(sptoks):
         pos_info.append(min([abs(_i - i) for i in aspect_is]))
@@ -81,6 +80,8 @@ Return:
 @max_target_len: maximum target length
 
 """
+
+
 def read_data_2014(fname, source_count, source_word2idx, target_count, target_phrase2idx, file_name):
     if os.path.isfile(fname) == False:
         raise ("[!] Data %s not found" % fname)
@@ -89,7 +90,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
     tree = ET.parse(fname)
     root = tree.getroot()
 
-    outF= open(file_name, "a")
+    outF = open(file_name, "a")
 
     # save all words in source_words (includes duplicates)
     # save all aspects in target_words (includes duplicates)
@@ -111,7 +112,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
                 if aspectTerm.get("polarity") == "conflict":
                     countConfl += 1
                     continue
-                    #TERM IPV TARGET
+                    # TERM IPV TARGET
                 asp = aspectTerm.get('term')
                 if asp != 'NULL':
                     aspNew = re.sub(' +', ' ', asp)
@@ -148,9 +149,9 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
             for aspectTerms in sentence.iter('aspectTerms'):
                 for aspectTerm in aspectTerms.findall('aspectTerm'):
                     if aspectTerm.get("polarity") == "conflict": continue
-                    #TERM IPV TARGET
+                    # TERM IPV TARGET
                     asp = aspectTerm.get('term')
-                    if asp != 'NULL': #removes implicit targets
+                    if asp != 'NULL':  # removes implicit targets
                         aspNew = re.sub(' +', ' ', asp)
                         t_sptoks = nltk.word_tokenize(aspNew)
                         source_data.append(idx)
@@ -162,7 +163,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
                         outF.write(outputtarget)
                         outF.write("\n")
                         pos_info, lab = _get_data_tuple(sptoks, t_sptoks, aspectTerm.get('polarity'))
-                        pos_info = [(1-(i / len(idx))) for i in pos_info]
+                        pos_info = [(1 - (i / len(idx))) for i in pos_info]
                         source_loc_data.append(pos_info)
                         targetdata = ' '.join(sp for sp in t_sptoks).lower()
                         target_data.append(target_phrase2idx[targetdata])
@@ -174,6 +175,7 @@ def read_data_2014(fname, source_count, source_word2idx, target_count, target_ph
     print("Read %s aspects from %s" % (len(source_data), fname))
     print("Conflicts: " + str(countConfl))
     return source_data, source_loc_data, target_data, target_label, max_sent_len, source_loc_data, max_target_len
+
 
 if __name__ == '__main__':
     # wrapper that handles flag parsing and then dispatches the main

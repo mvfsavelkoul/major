@@ -21,7 +21,7 @@ tf.app.flags.DEFINE_integer('max_doc_len', 20, 'max number of tokens per sentenc
 tf.app.flags.DEFINE_float('l2_reg', 0.00001, 'l2 regularization')
 tf.app.flags.DEFINE_float('random_base', 0.01, 'initial random base')
 tf.app.flags.DEFINE_integer('display_step', 4, 'number of test display step')
-tf.app.flags.DEFINE_integer('n_iter', 15, 'number of train iter')
+tf.app.flags.DEFINE_integer('n_iter', 1, 'number of train iter')
 tf.app.flags.DEFINE_float('keep_prob1', 0.5, 'dropout keep prob')
 tf.app.flags.DEFINE_float('keep_prob2', 0.5, 'dropout keep prob')
 tf.app.flags.DEFINE_string('t1', 'last', 'type of hidden output')
@@ -30,6 +30,10 @@ tf.app.flags.DEFINE_integer('n_layer', 3, 'number of stacked rnn')
 tf.app.flags.DEFINE_string('is_r', '1', 'prob')
 tf.app.flags.DEFINE_integer('max_target_len', 19, 'max target length')
 tf.app.flags.DEFINE_integer('splits', 9, 'number of data splits for test')
+tf.app.flags.DEFINE_float('momentum', 0.85, 'momentum rate')
+tf.app.flags.DEFINE_integer('pos', 0, 'mapping for positive sentiment')
+tf.app.flags.DEFINE_integer('neu', 1, 'mapping for neutral sentiment')
+tf.app.flags.DEFINE_integer('neg', 2, 'mapping for negative sentiment')
 
 # traindata, testdata and embeddings
 tf.app.flags.DEFINE_string("train_path", "data/programGeneratedData/" + str(
@@ -98,6 +102,7 @@ tf.app.flags.DEFINE_string("results_file", "data/programGeneratedData/" + str(
     FLAGS.embedding_dim) + "results_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
     FLAGS.year) + ".txt", "results for test")
 tf.app.flags.DEFINE_integer("writable", 0, "one if writable")
+tf.app.flags.DEFINE_integer("savable", 0, "one if savable")
 
 
 def print_config():

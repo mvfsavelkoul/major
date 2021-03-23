@@ -19,6 +19,7 @@ from loadData import *
 
 domain = "laptop"
 path = "hyper_results/LCRROT-ALTV4/" + domain + "/" + str(FLAGS.n_iter) + "/"
+runs = 4
 
 FLAGS.train_path = "data/programGeneratedData/BERT/" + str(
     FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
@@ -333,7 +334,7 @@ def plot_best_model():
     print_json(space_best_model)
 
 
-while True:
+for i in range(runs):
     print("Optimizing New Model")
     try:
         run_a_trial()

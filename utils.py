@@ -49,11 +49,11 @@ def load_w2v(w2v_file, embedding_dim, is_skip=False):
         word_dict[line[0]] = cnt
     w2v = np.asarray(w2v, dtype=np.float32)
     w2v = np.row_stack((w2v, np.sum(w2v, axis=0) / cnt))
-    print(np.shape(w2v))
+    # print(np.shape(w2v))
     word_dict['$t$'] = (cnt + 1)
     # w2v -= np.mean(w2v, axis=0)
     # w2v /= np.std(w2v, axis=0)
-    print(word_dict['$t$'], len(w2v))
+    # print(word_dict['$t$'], len(w2v))
     return word_dict, w2v
 
 
@@ -108,7 +108,7 @@ def change_y_to_onehot(y):
         tmp = [0] * n_class
         tmp[y_onehot_mapping[label]] = 1
         onehot.append(tmp)
-    return np.asarray(onehot, dtype=np.int32)
+    return np.asarray(onehot, dtype=np.int32), y_onehot_mapping
 
 
 def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=True, target_len=10, encoding='utf8'):
@@ -176,14 +176,14 @@ def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=T
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
     all_y = y;
-    y = change_y_to_onehot(y)
+    y, y_onehot_mapping = change_y_to_onehot(y)
     if type_ == 'TD':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
                np.asarray(sen_len_r), np.asarray(y)
     elif type_ == 'TC':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), np.asarray(sen_len_r), \
                np.asarray(y), np.asarray(target_words), np.asarray(tar_len), np.asarray(all_sent), np.asarray(
-            all_target), np.asarray(all_y)
+            all_target), np.asarray(all_y), y_onehot_mapping
     elif type_ == 'IAN':
         return np.asarray(x), np.asarray(sen_len), np.asarray(target_words), \
                np.asarray(tar_len), np.asarray(y)
@@ -250,7 +250,7 @@ def load_inputs_twitter_(input_file, word_id_file, sentence_len, type_='', is_r=
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
 
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     print(x)
     print(x_r)
     if type_ == 'TD':
@@ -309,7 +309,7 @@ def load_inputs_twitter_at(input_file, word_id_file, aspect_id_file, sentence_le
         if item > 0:
             cnt += 1
     print('cnt=', cnt)
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     for item in x:
         if len(item) != sentence_len:
             print('aaaaa=', len(item))
@@ -342,7 +342,7 @@ def load_inputs_sentence(input_file, word_id_file, sentence_len, encoding='utf8'
         sen_len.append(len(xx))
         xx = xx + [0] * (sentence_len - len(xx))
         x.append(xx)
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     print('load input {} done!'.format(input_file))
 
     return np.asarray(x), np.asarray(sen_len), np.asarray(y)
@@ -394,7 +394,7 @@ def load_inputs_document(input_file, word_id_file, max_sen_len, max_doc_len, _ty
             x.append(t_x)
             y.append(line[0])
 
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     print('load input {} done!'.format(input_file))
 
     return np.asarray(x), np.asarray(y), np.asarray(sen_len), np.asarray(doc_len)
@@ -422,7 +422,7 @@ def load_inputs_document_nohn(input_file, word_id_file, max_sen_len, _type=None,
         x.append(tx + [0] * (max_sen_len - i))
         y.append(line[0])
 
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     print('load input {} done!'.format(input_file))
 
     return np.asarray(x), np.asarray(y), np.asarray(sen_len)
@@ -460,7 +460,7 @@ def load_sentence(src_file, word2id, max_sen_len, freq=5):
     x2 = np.asarray(x2, dtype=np.int32)
     len1 = np.asarray(len1, dtype=np.int32)
     len2 = np.asarray(len2, dtype=np.int32)
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     return x1, x2, len1, len2, y
 
 
@@ -546,7 +546,7 @@ def load_inputs_cabasc(input_file, word_id_file, sentence_len, type_='', is_r=Tr
                     mult_mask
                 ))
 
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     if type_ == 'TD':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
                np.asarray(sen_len_r), np.asarray(y)
@@ -622,7 +622,7 @@ def load_inputs_full(input_file, word_id_file, sentence_len, type_='', is_r=True
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
 
-    y = change_y_to_onehot(y)
+    y, _ = change_y_to_onehot(y)
     if type_ == 'TD':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
                np.asarray(sen_len_r), np.asarray(y)

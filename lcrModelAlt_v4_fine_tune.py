@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+# Left-Center-Right LSTMs are fixed.
+
 import os
 import sys
 
@@ -16,7 +18,7 @@ tf.set_random_seed(1)
 
 
 def lcr_rot(input_fw, input_bw, sen_len_fw, sen_len_bw, target, sen_len_tr, keep_prob1, keep_prob2, l2, _id='all'):
-    print('I am lcr_rot_alt from Maria.')
+    print('I am lcr_rot_alt from Maria fine-tuner.')
     cell = tf.contrib.rnn.LSTMCell
     # left hidden
     input_fw = tf.nn.dropout(input_fw, keep_prob=keep_prob1)
@@ -149,8 +151,11 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         loss = loss_func(y, prob)
         acc_num, acc_prob = acc_func(y, prob)
         global_step = tf.Variable(0, name='tr_global_step', trainable=False)
+        trainable = tf.trainable_variables()
+        to_use = trainable[12:]
         optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=momentum).minimize(loss,
-                                                                                                        global_step=global_step)
+                                                                                                        global_step=global_step,
+                                                                                                        var_list=to_use)
         # optimizer = train_func(loss, FLAGS.learning_rate, global_step)
         true_y = tf.argmax(y, 1)
         pred_y = tf.argmax(prob, 1)
@@ -178,11 +183,15 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         # train_summary_op, test_summary_op, validate_summary_op, train_summary_writer, test_summary_writer, \
         # validate_summary_writer = summary_func(loss, acc_prob, test_loss, test_acc, _dir, title, sess)
 
-        save_dir = 'temp_model/' + str(timestamp) + '_' + title + '/'
+        # save_dir = 'temp_model/' + str(timestamp) + '_' + title + '/'
         # saver = saver_func(save_dir)
 
-        sess.run(tf.global_variables_initializer())
+        # sess.run(tf.global_variables_initializer())
         # saver.restore(sess, '/-')
+
+        save_dir = "model/" + "restaurant_" + FLAGS.target_domain + "/"
+        saver = saver_func(save_dir)
+        saver.restore(sess, save_dir)
 
         if FLAGS.is_r == '1':
             is_r = True
@@ -303,8 +312,8 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                     "---\nLCR-Rot-Hop++. Train accuracy: {:.6f}, Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n".format(
                         trainacc, acc, totalacc))
                 maxtotalacc = ((max_acc * remaining_size) + (accuracyOnt * (test_size - remaining_size))) / test_size
-                results.write("Maximum. Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n---\n".format(max_acc,
-                                                                                                        maxtotalacc))
+                results.write("Maximum. Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n\n".format(max_acc,
+                                                                                                     maxtotalacc))
 
         P = precision_score(max_ty, max_py, average=None)
         R = recall_score(max_ty, max_py, average=None)
@@ -338,12 +347,6 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         #    FLAGS.n_hidden,
         #    FLAGS.l2_reg
         # ))
-
-        # Save model.
-        if FLAGS.savable == 1:
-            save_dir = "model/" + FLAGS.source_domain + "_" + FLAGS.target_domain + "/"
-            saver = saver_func(save_dir)
-            saver.save(sess, save_dir)
 
         # Record prediction-realization.
         FLAGS.pos = y_onehot_mapping['1']
