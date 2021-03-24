@@ -315,27 +315,27 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                 results.write("Maximum. Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n\n".format(max_acc,
                                                                                                      maxtotalacc))
 
-        P = precision_score(max_ty, max_py, average=None)
-        R = recall_score(max_ty, max_py, average=None)
-        F1 = f1_score(max_ty, max_py, average=None)
+        P = precision_score(ty, py, average=None)
+        R = recall_score(ty, py, average=None)
+        F1 = f1_score(ty, py, average=None)
         print('P:', P, 'avg=', sum(P) / FLAGS.n_class)
         print('R:', R, 'avg=', sum(R) / FLAGS.n_class)
         print('F1:', F1, 'avg=', sum(F1) / FLAGS.n_class)
 
         fp = open(FLAGS.prob_file, 'w')
-        for item in max_prob:
+        for item in p:
             fp.write(' '.join([str(it) for it in item]) + '\n')
         fp = open(FLAGS.prob_file + '_fw', 'w')
-        for y1, y2, ws in zip(max_ty, max_py, max_fw):
+        for y1, y2, ws in zip(ty, py, fw):
             fp.write(str(y1) + ' ' + str(y2) + ' ' + ' '.join([str(w) for w in ws[0]]) + '\n')
         fp = open(FLAGS.prob_file + '_bw', 'w')
-        for y1, y2, ws in zip(max_ty, max_py, max_bw):
+        for y1, y2, ws in zip(ty, py, bw):
             fp.write(str(y1) + ' ' + str(y2) + ' ' + ' '.join([str(w) for w in ws[0]]) + '\n')
         fp = open(FLAGS.prob_file + '_tl', 'w')
-        for y1, y2, ws in zip(max_ty, max_py, max_tl):
+        for y1, y2, ws in zip(ty, py, tl):
             fp.write(str(y1) + ' ' + str(y2) + ' ' + ' '.join([str(w) for w in ws[0]]) + '\n')
         fp = open(FLAGS.prob_file + '_tr', 'w')
-        for y1, y2, ws in zip(max_ty, max_py, max_tr):
+        for y1, y2, ws in zip(ty, py, tr):
             fp.write(str(y1) + ' ' + str(y2) + ' ' + ' '.join([str(w) for w in ws[0]]) + '\n')
 
         print('Optimization Finished! Max acc={}'.format(max_acc))
@@ -387,8 +387,8 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                     "Neutral. Correct: {}, Incorrect: {}, Total: {}\n\n".format(neu_correct, neu_count - neu_correct,
                                                                                 neu_count))
 
-        return max_acc, np.where(np.subtract(max_py, max_ty) == 0, 0,
-                                 1), max_fw.tolist(), max_bw.tolist(), max_tl.tolist(), max_tr.tolist()
+        return acc, np.where(np.subtract(py, ty) == 0, 0,
+                             1), fw.tolist(), bw.tolist(), tl.tolist(), tr.tolist()
 
 
 if __name__ == '__main__':
