@@ -88,6 +88,8 @@ def loadHyperData(config, loadData, percentage=0.8):
             chunked = [lines[i:i + 3] for i in range(0, len(lines), 3)]
             random.shuffle(chunked)
             numlines = int(len(chunked) * percentage)
+            if numlines % 20 == 1:
+                numlines += 1
             for chunk in chunked[:numlines]:
                 for line in chunk:
                     foutBig.write(line)

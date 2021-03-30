@@ -1,12 +1,30 @@
 import os
+import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 
-import en_core_web_sm
-
-en_nlp = en_core_web_sm.load()
 import nltk
-import re
+
+# import en_core_web_sm
+# en_nlp = en_core_web_sm.load()
+from HAABSA.dataReader2016 import read_data_2016
+from config import *
+
+
+def main(_):
+    book_in = "data/externalData/book_reviews_2019"
+    hotel_in = "data/externalData/hotel_reviews_2014"
+
+    book_out = "data/programGeneratedData/BERT/book/raw_data_book_2019.txt"
+    hotel_out = "data/programGeneratedData/BERT/hotel/raw_data_hotel_2014.txt"
+
+    with open(book_out, "w") as out:
+        out.write("")
+    with open(hotel_out, "w") as out:
+        out.write("")
+
+    read_data_2016(book_in, [], {}, [], {}, book_out)
+    read_data_2016(hotel_in, [], {}, [], {}, hotel_out)
 
 
 def window(iterable, size):  # stack overflow solution for sliding window
@@ -71,7 +89,7 @@ Return:
 """
 
 
-def read_data_2016(fname, source_count, source_word2idx, target_count, target_phrase2idx, file_name):
+def read_data_2014(fname, source_count, source_word2idx, target_count, target_phrase2idx, file_name):
     if os.path.isfile(fname) == False:
         raise ("[!] Data %s not found" % fname)
 
@@ -79,7 +97,7 @@ def read_data_2016(fname, source_count, source_word2idx, target_count, target_ph
     tree = ET.parse(fname)
     root = tree.getroot()
 
-    outF = open(file_name, "w")
+    outF = open(file_name, "a")
 
     # save all words in source_words (includes duplicates)
     # save all aspects in target_words (includes duplicates)
@@ -96,13 +114,14 @@ def read_data_2016(fname, source_count, source_word2idx, target_count, target_ph
             source_words.extend([''.join(sp).lower()])
         if len(sptoks) > max_sent_len:
             max_sent_len = len(sptoks)
-        for opinions in sentence.iter('Opinions'):
-            for opinion in opinions.findall('Opinion'):
-                if opinion.get("polarity") == "conflict":
+        for aspectTerms in sentence.iter('aspectTerms'):
+            for aspectTerm in aspectTerms.findall('aspectTerm'):
+                if aspectTerm.get("polarity") == "conflict":
                     countConfl += 1
                     continue
-                asp = opinion.get('target')
-                if asp != 'NULL' and asp is not None:
+                    # TERM IPV TARGET
+                asp = aspectTerm.get('term')
+                if asp != 'NULL':
                     aspNew = re.sub(' +', ' ', asp)
                     t_sptoks = nltk.word_tokenize(aspNew)
                     for sp in t_sptoks:
@@ -134,11 +153,12 @@ def read_data_2016(fname, source_count, source_word2idx, target_count, target_ph
             idx = []
             for sptok in sptoks:
                 idx.append(source_word2idx[''.join(sptok).lower()])
-            for opinions in sentence.iter('Opinions'):
-                for opinion in opinions.findall('Opinion'):
-                    if opinion.get("polarity") == "conflict": continue
-                    asp = opinion.get('target')
-                    if asp != 'NULL' and asp is not None:  # removes implicit targets
+            for aspectTerms in sentence.iter('aspectTerms'):
+                for aspectTerm in aspectTerms.findall('aspectTerm'):
+                    if aspectTerm.get("polarity") == "conflict": continue
+                    # TERM IPV TARGET
+                    asp = aspectTerm.get('term')
+                    if asp != 'NULL':  # removes implicit targets
                         aspNew = re.sub(' +', ' ', asp)
                         t_sptoks = nltk.word_tokenize(aspNew)
                         source_data.append(idx)
@@ -149,7 +169,7 @@ def read_data_2016(fname, source_count, source_word2idx, target_count, target_ph
                         outF.write("\n")
                         outF.write(outputtarget)
                         outF.write("\n")
-                        pos_info, lab = _get_data_tuple(sptoks, t_sptoks, opinion.get('polarity'))
+                        pos_info, lab = _get_data_tuple(sptoks, t_sptoks, aspectTerm.get('polarity'))
                         pos_info = [(1 - (i / len(idx))) for i in pos_info]
                         source_loc_data.append(pos_info)
                         targetdata = ' '.join(sp for sp in t_sptoks).lower()
@@ -160,5 +180,10 @@ def read_data_2016(fname, source_count, source_word2idx, target_count, target_ph
 
     outF.close()
     print("Read %s aspects from %s" % (len(source_data), fname))
-    print(countConfl)
+    print("Conflicts: " + str(countConfl))
     return source_data, source_loc_data, target_data, target_label, max_sent_len, source_loc_data, max_target_len
+
+
+if __name__ == '__main__':
+    # wrapper that handles flag parsing and then dispatches the main
+    tf.app.run()

@@ -44,9 +44,9 @@ def main(_):
 
     # Change train and test path in case of BERT.
     if FLAGS.embedding_type == "BERT":
-        FLAGS.train_path = "data/programGeneratedData/BERT/" + str(
+        FLAGS.train_path = "data/programGeneratedData/BERT/" + FLAGS.source_domain + "/" + str(
             FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
-        FLAGS.test_path = "data/programGeneratedData/BERT/" + str(
+        FLAGS.test_path = "data/programGeneratedData/BERT/" + FLAGS.target_domain + "/" + str(
             FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
 
     # retrieve data and wordembeddings

@@ -11,7 +11,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 from nn_layer import softmax_layer, bi_dynamic_rnn, reduce_mean_with_len
 from att_layer_maria import bilinear_attention_layer, dot_produce_attention_layer
 from config import *
-from utils import load_w2v, batch_index, load_inputs_twitter
+from utils import load_w2v, batch_index, load_inputs_twitter_test
 import numpy as np
 
 tf.set_random_seed(1)
@@ -108,7 +108,7 @@ def lcr_rot(input_fw, input_bw, sen_len_fw, sen_len_bw, target, sen_len_tr, keep
 
 def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning_rate=0.09, keep_prob=0.3,
          momentum=0.85, l2=0.00001):
-    # print_config()
+    print_config()
     with tf.device('/gpu:1'):
         # Separate train and test embeddings.
         # word_id_mapping, w2v = load_w2v(FLAGS.embedding_path, FLAGS.embedding_dim)
@@ -189,7 +189,7 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         # sess.run(tf.global_variables_initializer())
         # saver.restore(sess, '/-')
 
-        save_dir = "model/" + "restaurant_" + FLAGS.target_domain + "/"
+        save_dir = "model/restaurant_laptop/"
         saver = saver_func(save_dir)
         saver.restore(sess, save_dir)
 
@@ -198,11 +198,15 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         else:
             is_r = False
 
+        # Mapping from restaurant training.
+        y_onehot_mapping = {'-1': 0, '1': 1, '0': 2}
+
         if FLAGS.writable == 1:
             with open(FLAGS.results_file, "a") as results:
                 results.write("Train data. ")
-        tr_x, tr_sen_len, tr_x_bw, tr_sen_len_bw, tr_y, tr_target_word, tr_tar_len, _, _, _, _ = load_inputs_twitter(
+        tr_x, tr_sen_len, tr_x_bw, tr_sen_len_bw, tr_y, tr_target_word, tr_tar_len, _, _, _, _ = load_inputs_twitter_test(
             train_path,
+            y_onehot_mapping,
             train_word_id_mapping,
             FLAGS.max_sentence_len,
             'TC',
@@ -213,8 +217,9 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
         if FLAGS.writable == 1:
             with open(FLAGS.results_file, "a") as results:
                 results.write("Test data. ")
-        te_x, te_sen_len, te_x_bw, te_sen_len_bw, te_y, te_target_word, te_tar_len, _, _, _, y_onehot_mapping = load_inputs_twitter(
+        te_x, te_sen_len, te_x_bw, te_sen_len_bw, te_y, te_target_word, te_tar_len, _, _, _, _ = load_inputs_twitter_test(
             test_path,
+            y_onehot_mapping,
             test_word_id_mapping,
             FLAGS.max_sentence_len,
             'TC',
@@ -381,11 +386,11 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                     "Positive. Correct: {}, Incorrect: {}, Total: {}\n".format(pos_correct, pos_count - pos_correct,
                                                                                pos_count))
                 results.write(
-                    "Negative. Correct: {}, Incorrect: {}, Total: {}\n".format(neg_correct, neg_count - neg_correct,
-                                                                               neg_count))
+                    "Neutral. Correct: {}, Incorrect: {}, Total: {}\n".format(neu_correct, neu_count - neu_correct,
+                                                                              neu_count))
                 results.write(
-                    "Neutral. Correct: {}, Incorrect: {}, Total: {}\n\n".format(neu_correct, neu_count - neu_correct,
-                                                                                neu_count))
+                    "Negative. Correct: {}, Incorrect: {}, Total: {}\n\n".format(neg_correct, neg_count - neg_correct,
+                                                                                 neg_count))
 
         return acc, np.where(np.subtract(py, ty) == 0, 0,
                              1), fw.tolist(), bw.tolist(), tl.tolist(), tr.tolist()

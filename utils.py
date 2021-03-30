@@ -48,7 +48,9 @@ def load_w2v(w2v_file, embedding_dim, is_skip=False):
         w2v.append([float(v) for v in line[1:]])
         word_dict[line[0]] = cnt
     w2v = np.asarray(w2v, dtype=np.float32)
-    w2v = np.row_stack((w2v, np.sum(w2v, axis=0) / cnt))
+    sum = np.sum(w2v, axis=0, dtype=np.float32)
+    div = np.divide(sum, cnt, dtype=np.float32)
+    w2v = np.row_stack((w2v, div))
     # print(np.shape(w2v))
     word_dict['$t$'] = (cnt + 1)
     # w2v -= np.mean(w2v, axis=0)
@@ -96,12 +98,31 @@ def change_y_to_onehot(y):
     if FLAGS.writable == 1:
         count = Counter(y)
         with open(FLAGS.results_file, "a") as results:
-            results.write("Positive: " + str(count['1']) + ", Negative: " + str(count['-1']) + ", Neutral: " + str(
-                count['0']) + ", Total: " + str(sum(count.values())) + "\n")
+            results.write("Positive: " + str(count['1']) + ", Neutral: " + str(
+                count['0']) + ", Negative: " + str(count['-1']) + ", Total: " + str(sum(count.values())) + "\n")
     print(Counter(y))
     class_set = set(y)
     n_class = len(class_set)
     y_onehot_mapping = dict(zip(class_set, range(n_class)))
+    print(y_onehot_mapping)
+    onehot = []
+    for label in y:
+        tmp = [0] * n_class
+        tmp[y_onehot_mapping[label]] = 1
+        onehot.append(tmp)
+    return np.asarray(onehot, dtype=np.int32), y_onehot_mapping
+
+
+def change_y_to_onehot_test(y, y_onehot_mapping):
+    from collections import Counter
+    if FLAGS.writable == 1:
+        count = Counter(y)
+        with open(FLAGS.results_file, "a") as results:
+            results.write("Positive: " + str(count['1']) + ", Neutral: " + str(
+                count['0']) + ", Negative: " + str(count['-1']) + ", Total: " + str(sum(count.values())) + "\n")
+    print(Counter(y))
+    class_set = set(y)
+    n_class = len(class_set)
     print(y_onehot_mapping)
     onehot = []
     for label in y:
@@ -177,6 +198,87 @@ def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=T
             x.append(words + [0] * (sentence_len - len(words)))
     all_y = y;
     y, y_onehot_mapping = change_y_to_onehot(y)
+    if type_ == 'TD':
+        return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
+               np.asarray(sen_len_r), np.asarray(y)
+    elif type_ == 'TC':
+        return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), np.asarray(sen_len_r), \
+               np.asarray(y), np.asarray(target_words), np.asarray(tar_len), np.asarray(all_sent), np.asarray(
+            all_target), np.asarray(all_y), y_onehot_mapping
+    elif type_ == 'IAN':
+        return np.asarray(x), np.asarray(sen_len), np.asarray(target_words), \
+               np.asarray(tar_len), np.asarray(y)
+    else:
+        return np.asarray(x), np.asarray(sen_len), np.asarray(y)
+
+
+def load_inputs_twitter_test(input_file, y_onehot_mapping, word_id_file, sentence_len, type_='', is_r=True,
+                             target_len=10, encoding='utf8'):
+    if type(word_id_file) is str:
+        word_to_id = load_word_id_mapping(word_id_file)
+    else:
+        word_to_id = word_id_file
+    print('Load word-to-id done!')
+
+    x, y, sen_len = [], [], []
+    x_r, sen_len_r = [], []
+    target_words = []
+    tar_len = []
+    all_target, all_sent, all_y = [], [], []
+    # read in txt file
+    lines = open(input_file).readlines()
+    for i in range(0, len(lines), 3):
+        # targets
+        words = lines[i + 1].lower().split()
+        target = words
+
+        target_word = []
+        for w in words:
+            if w in word_to_id:
+                target_word.append(word_to_id[w])
+        l = min(len(target_word), target_len)
+        tar_len.append(l)
+        target_words.append(target_word[:l] + [0] * (target_len - l))
+
+        # sentiment
+        y.append(lines[i + 2].strip().split()[0])
+
+        # left and right context
+        words = lines[i].lower().split()
+        sent = words
+        words_l, words_r = [], []
+        flag = True
+        for word in words:
+            if word == '$t$':
+                flag = False
+                continue
+            if flag:
+                if word in word_to_id:
+                    words_l.append(word_to_id[word])
+            else:
+                if word in word_to_id:
+                    words_r.append(word_to_id[word])
+        if type_ == 'TD' or type_ == 'TC':
+            # words_l.extend(target_word)
+            words_l = words_l[:sentence_len]
+            words_r = words_r[:sentence_len]
+            sen_len.append(len(words_l))
+            x.append(words_l + [0] * (sentence_len - len(words_l)))
+            # tmp = target_word + words_r
+            tmp = words_r
+            if is_r:
+                tmp.reverse()
+            sen_len_r.append(len(tmp))
+            x_r.append(tmp + [0] * (sentence_len - len(tmp)))
+            all_sent.append(sent)
+            all_target.append(target)
+        else:
+            words = words_l + target_word + words_r
+            words = words[:sentence_len]
+            sen_len.append(len(words))
+            x.append(words + [0] * (sentence_len - len(words)))
+    all_y = y;
+    y, y_onehot_mapping = change_y_to_onehot_test(y, y_onehot_mapping)
     if type_ == 'TD':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
                np.asarray(sen_len_r), np.asarray(y)

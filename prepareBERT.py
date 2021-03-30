@@ -19,10 +19,17 @@ from config import *
 #                  '/data/temporaryData/temp_BERT_Large/BERT_large2000till2369.txt',
 #                  '/data/temporaryData/temp_BERT_Large/BERT_large2369till2530.txt']
 
-domain = "laptop"
+# Get raw data first.
+
+# For camera (Canon and Nikon), get raw_data_camera_2004 and add both BERT embeddings.
+
+domain = "restaurant"
 path = "data/programGeneratedData/BERT/"
 
 temp_filenames_base = ["data/externalData/" + "BERT_base_" + domain + "_" + str(FLAGS.year) + ".txt"]
+
+FLAGS.source_domain = domain
+FLAGS.target_domain = domain
 
 count_sentences = 0
 with open(path + "temp/BERT_base_" + str(FLAGS.year) + "embedding.txt", 'w') as outf:
@@ -274,22 +281,41 @@ with open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt", 'w
 # <editor-fold desc="Split in train and test file">
 
 linesAllData = open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt").readlines()
-# with open(path + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(FLAGS.year) +'_BERT.txt','w') as outTrain, \
-#        open(path + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) +'_BERT.txt','w') as outTest:
 
-# For laptop.
-# Laptop train has 2313 (unique) aspects (6939 lines).
-for i in range(0, 6750, 750):
-    with open(path + "splits/" + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(FLAGS.year) + "_BERT_" + str(
+if domain == "laptop" or domain == "book":
+    # Split datasets.
+    if domain == "laptop":
+        # Laptop train originally has 2313 aspects (6939 lines).
+        train_lines = 6750
+    else:
+        # Book train will have 2500 aspects (7500 lines).
+        train_lines = 7500
+    for i in range(0, train_lines, 750):
+        with open(path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(
+                FLAGS.year) + "_BERT_" + str(
             round((i + 750) / 3)) + ".txt", 'w') as outTrain:
-        for j in range(0, i + 750):
+            for j in range(0, i + 750):
+                outTrain.write(linesAllData[j])
+    with open(path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt',
+              'w') as outTest:
+        for k in range(train_lines, len(linesAllData)):
+            outTest.write(linesAllData[k])
+else:
+    # Non-split datasets.
+    if domain == "restaurant":
+        # Restaurant train has 3602 aspects (10806 lines)
+        train_lines = 10806
+    else:
+        # Use 80-20 split for train and test set.
+        train_aspects = int(0.8 * (linesAllData / 3))
+        train_lines = 3 * train_aspects
+    with open(
+            path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(FLAGS.year) + '_BERT.txt',
+            'w') as outTrain:
+        for j in range(0, train_lines):
             outTrain.write(linesAllData[j])
-with open(path + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt', 'w') as outTest:
-    for k in range(6750, len(linesAllData)):
-        outTest.write(linesAllData[k])
-
-# For restaurant.
-# with open(path + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(FLAGS.year) +'_BERT.txt','w') as outTrain:
-# for j in range(0, len(linesAllData)):
-#    outTrain.write(linesAllData[j])
+    with open(path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt',
+              'w') as outTest:
+        for j in range(train_lines, len(linesAllData)):
+            outTest.write(linesAllData[j])
 # </editor-fold>

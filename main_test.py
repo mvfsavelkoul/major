@@ -3,279 +3,277 @@
 # https://github.com/pcgreat/mem_absa
 # https://github.com/NUSTM/ABSC
 # https://github.com/ofwallaart/HAABSA
+# https://github.com/mtrusca/HAABSA_PLUS_PLUS
 
 import nltk
 
-import cabascModel
-import lcrModel
-import lcrModelAlt
 import lcrModelAlt_hierarchical_v4
-import lcrModelInverse
-import svmModel
-from HAABSA import lcrModelAlt_v4_fine_tune
-from OntologyReasoner import OntReasoner
+from HAABSA import lcrModelAlt_v4_fine_tune, lcrModelAlt_v4_test
+from config import *
 from loadData import *
 
 nltk.download('punkt')
 
-# import parameter configuration and data paths
-from config import *
-
-# import modules
-import numpy as np
-
 
 # Main function.
 def main(_):
-    altv4 = True
+    # After running: back-up results file and model in case of running the model to be saved.
+    # It is recommended to turn on logging of the output and to back that up as well.
+
     rest_lapt = False
-    lapt_lapt = True
+    lapt_lapt = False
+    book_book = False
+    small_small = False
     rest_lapt_lapt = False
-    writeResult = True
+    rest_book_book = False
+    rest_small_small = False
+    rest_test = False
+    write_result = True
 
-    if altv4:
-        FLAGS.train_path = "data/programGeneratedData/BERT/" + str(
-            FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
-        FLAGS.test_path = "data/programGeneratedData/BERT/" + str(
-            FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
+    if rest_lapt:
+        # Run and save restaurant-laptop.
+        run_regular(source_domain="restaurant", target_domain="laptop", year=2014, learning_rate=0.001, keep_prob=0.7,
+                    momentum=0.85, l2_reg=0.00001, write_result=write_result, savable=True)
 
-        # Restaurant hyper parameters.
-        FLAGS.learning_rate = 0.02
-        FLAGS.keep_prob1 = 0.3
-        FLAGS.keep_prob2 = 0.3
-        FLAGS.momentum = 0.95
-        FLAGS.l2_reg = 0.00001
-        if rest_lapt:
-            # Run restaurant-laptop.
-            FLAGS.source_domain = "restaurant"
-            FLAGS.train_data = "data/externalData/" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + ".xml"
-            FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
-                FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
-            FLAGS.train_path = "data/programGeneratedData/BERT/" + str(
-                FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
-            FLAGS.savable = 1
-            if writeResult:
-                with open(FLAGS.results_file, "w") as results:
-                    results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + "\n---\n")
-                FLAGS.writable = 1
-            run_main(False)
-            FLAGS.savable = 0
+    if lapt_lapt:
+        # Run laptop-laptop for all splits.
+        run_split(source_domain="laptop", target_domain="laptop", year=2014, splits=9, split_size=250,
+                  learning_rate=0.001, keep_prob=0.7, momentum=0.85, l2_reg=0.00001, write_result=write_result)
 
-        # Laptop hyper parameters.
-        FLAGS.learning_rate = 0.02
-        FLAGS.keep_prob1 = 0.3
-        FLAGS.keep_prob2 = 0.3
-        FLAGS.momentum = 0.95
-        FLAGS.l2_reg = 0.00001
-        if lapt_lapt:
-            # Run laptop-laptop for different sizes.
-            FLAGS.source_domain = "laptop"
-            FLAGS.train_data = "data/externalData/" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + ".xml"
-            FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
-                FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
-            if writeResult:
-                FLAGS.results_file = "data/programGeneratedData/" + str(
-                    FLAGS.embedding_dim) + "results_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
-                    FLAGS.year) + ".txt"
-                with open(FLAGS.results_file, "w") as results:
-                    results.write("")
-                FLAGS.writable = 1
-            for i in range(1, 10):
-                print("Running " + FLAGS.source_domain + " to " + FLAGS.target_domain + " using " + str(
-                    250 * i) + " aspects...")
-                if FLAGS.writable == 1:
-                    with open(FLAGS.results_file, "a") as results:
-                        results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + " using " + str(
-                            250 * i) + " aspects\n---\n")
-                FLAGS.train_path = "data/programGeneratedData/BERT/splits/" + str(
-                    FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT_" + str(
-                    250 * i) + ".txt"
-                run_main(False)
+    if book_book:
+        # Run book-book for all splits.
+        run_split(source_domain="book", target_domain="book", year=2019, splits=10, split_size=250,
+                  learning_rate=0.001, keep_prob=0.7, momentum=0.85, l2_reg=0.00001, write_result=write_result)
 
-        # Fine-tune hyper parameters.
-        FLAGS.learning_rate = 0.001
-        FLAGS.keep_prob1 = 0.3
-        FLAGS.keep_prob2 = 0.3
-        FLAGS.momentum = 0.95
-        FLAGS.l2_reg = 0.00001
-        if rest_lapt_lapt:
-            # Run fine-tuned restaurant-laptop for different sizes.
-            FLAGS.source_domain = "laptop"
-            FLAGS.train_data = "data/externalData/" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + ".xml"
-            FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
-                FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
-            if writeResult:
-                FLAGS.results_file = "data/programGeneratedData/" + str(
-                    FLAGS.embedding_dim) + "results_restaurant_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
-                    FLAGS.year) + ".txt"
-                with open(FLAGS.results_file, "w") as results:
-                    results.write("")
-                FLAGS.writable = 1
-            for i in range(1, 10):
-                print(
-                    "Running restaurant model with " + FLAGS.source_domain + " fine-tuning to " + FLAGS.target_domain + " using " + str(
-                        250 * i) + " aspects...")
-                if FLAGS.writable == 1:
-                    with open(FLAGS.results_file, "a") as results:
-                        results.write(
-                            "Restaurant to " + FLAGS.target_domain + " with " + FLAGS.source_domain + " fine-tuning using " + str(
-                                250 * i) + " aspects\n---\n")
-                FLAGS.train_path = "data/programGeneratedData/BERT/splits/" + str(
-                    FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT_" + str(
-                    250 * i) + ".txt"
-                run_main(True)
-        FLAGS.writable = 0
+    if small_small:
+        # Hyper parameters (learning_rate, keep_prob, momentum, l2_reg).
+        hyper_hotel = [0.001, 0.7, 0.85, 0.00001]
+        hyper_apex = [0.001, 0.7, 0.85, 0.00001]
+        hyper_camera = [0.001, 0.7, 0.85, 0.00001]
+        hyper_creative = [0.001, 0.7, 0.85, 0.00001]
+        hyper_nokia = [0.001, 0.7, 0.85, 0.00001]
 
+        domains = [["hotel", 2014, hyper_hotel], ["Apex", 2004, hyper_apex], ["Camera", 2004, hyper_camera],
+                   ["Creative", 2004, hyper_creative], ["Nokia", 2004, hyper_nokia]]
 
-# Run main function.
-def run_main(fine_tune):
-    loadData = False
-    useOntology = False
-    runCABASC = False
-    runLCRROT = False
-    runLCRROTINVERSE = False
-    runLCRROTALT = False
-    runLCRROTALTV4 = True
-    runSVM = False
+        # Run all single run models.
+        for domain in domains:
+            run_regular(source_domain=domain[0], target_domain=domain[0], year=domain[1], learning_rate=domain[2][0],
+                        keep_prob=domain[2][1], momentum=domain[2][2], l2_reg=domain[2][3], write_result=write_result,
+                        savable=False)
 
-    weightanalysis = False
+    if rest_lapt_lapt:
+        # Run laptop-laptop fine-tuning on restaurant model.
+        run_fine_tune(original_domain="restaurant", source_domain="laptop", target_domain="laptop", year=2014, splits=9,
+                      split_size=250, learning_rate=0.02, keep_prob=0.6, momentum=0.85, l2_reg=0.00001,
+                      write_result=write_result)
 
-    # determine if backupmethod is used
-    if runCABASC or runLCRROT or runLCRROTALT or runLCRROTINVERSE or runSVM:
-        backup = True
-    else:
-        backup = False
+    if rest_book_book:
+        # Run book-book fine-tuning on restaurant model.
+        run_fine_tune(original_domain="restaurant", source_domain="book", target_domain="book", year=2014, splits=10,
+                      split_size=250, learning_rate=0.001, keep_prob=0.6, momentum=0.99, l2_reg=0.001,
+                      write_result=write_result)
 
-    # retrieve data and wordembeddings
-    train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, loadData)
+    if rest_small_small:
+        # Hyper parameters (learning_rate, keep_prob, momentum, l2_reg).
+        hyper_hotel = [0.001, 0.7, 0.85, 0.00001]
+        hyper_apex = [0.001, 0.7, 0.85, 0.00001]
+        hyper_camera = [0.001, 0.7, 0.85, 0.00001]
+        hyper_creative = [0.001, 0.7, 0.85, 0.00001]
+        hyper_nokia = [0.001, 0.7, 0.85, 0.00001]
 
-    # print(test_size)
-    # Was 250, 0.87
-    remaining_size = test_size
-    accuracyOnt = 1.00
+        # Run fine-tuning on restaurant model for all single run models.
+        domains = [["hotel", 2014, hyper_hotel], ["Apex", 2004, hyper_apex], ["Camera", 2004, hyper_camera],
+                   ["Creative", 2004, hyper_creative], ["Nokia", 2004, hyper_nokia]]
 
-    if useOntology == True:
-        print('Starting Ontology Reasoner')
-        Ontology = OntReasoner()
-        # out of sample accuracy
-        accuracyOnt, remaining_size = Ontology.run(backup, FLAGS.test_path, runSVM)
-        # in sample accuracy
-        # Ontology = OntReasoner()
-        # accuracyInSampleOnt, remaining_size = Ontology.run(backup, FLAGS.train_path, runSVM)
-        if runSVM == True:
-            test = FLAGS.remaining_svm_test_path
-        else:
-            test = FLAGS.remaining_test_path
-        print('test acc={:.4f}, remaining size={}'.format(accuracyOnt, remaining_size))
-        with open(FLAGS.results_file, "a") as results:
-            if FLAGS.writable == 1:
-                results.write("---\nOntology. Test accuracy: {:.4f}\n".format(accuracyOnt))
-    else:
-        if runSVM == True:
-            test = FLAGS.test_svm_path
-        else:
-            test = FLAGS.test_path
+        for domain in domains:
+            run_fine_tune(original_domain="restaurant", source_domain=domain[0], target_domain=domain[0],
+                          year=domain[1], splits=0, split_size=0, learning_rate=domain[2][0], keep_prob=domain[2][1],
+                          momentum=domain[2][2], l2_reg=domain[2][3], write_result=write_result, split=False)
 
-    # LCR-Rot model
-    if runLCRROT == True:
-        _, pred1, fw1, bw1, tl1, tr1, sent, target, true = lcrModel.main(FLAGS.train_path, test, accuracyOnt, test_size,
-                                                                         remaining_size)
-        tf.reset_default_graph()
-
-    # LCR-Rot-inv model
-    if runLCRROTINVERSE == True:
-        lcrModelInverse.main(FLAGS.train_path, test, accuracyOnt, test_size, remaining_size)
-        tf.reset_default_graph()
-
-    # LCR-Rot-hop model
-    if runLCRROTALT == True:
-        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt.main(FLAGS.train_path, test, accuracyOnt, test_size, remaining_size,
-                                                        FLAGS.learning_rate, FLAGS.keep_prob1, FLAGS.momentum,
-                                                        FLAGS.l2_reg)
-        tf.reset_default_graph()
-
-    # LCR-Rot-hop++
-    if runLCRROTALTV4 and not fine_tune:
-        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path, test, accuracyOnt, test_size,
-                                                                        remaining_size,
-                                                                        FLAGS.learning_rate, FLAGS.keep_prob1,
-                                                                        FLAGS.momentum,
-                                                                        FLAGS.l2_reg)
-        tf.reset_default_graph()
-
-    # Fine-tuned LCR-Rot-hop++
-    if fine_tune:
-        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_v4_fine_tune.main(FLAGS.train_path, test, accuracyOnt, test_size,
-                                                                     remaining_size,
-                                                                     FLAGS.learning_rate, FLAGS.keep_prob1,
-                                                                     FLAGS.momentum,
-                                                                     FLAGS.l2_reg)
-        tf.reset_default_graph()
-
-    # CABASC model
-    if runCABASC == True:
-        _, pred3, weights = cabascModel.main(FLAGS.train_path, test, accuracyOnt, test_size, remaining_size)
-        if weightanalysis and runLCRROT and runLCRROTALT:
-            outF = open('sentence_analysis.txt', "w")
-            dif = np.subtract(pred3, pred1)
-            for i, value in enumerate(pred3):
-                if value == 1 and pred2[i] == 0:
-                    sentleft, sentright = [], []
-                    flag = True
-                    for word in sent[i]:
-                        if word == '$t$':
-                            flag = False
-                            continue
-                        if flag:
-                            sentleft.append(word)
-                        else:
-                            sentright.append(word)
-                    print(i)
-                    outF.write(str(i))
-                    outF.write("\n")
-                    outF.write(
-                        'lcr pred: {}; CABASC pred: {}; lcralt pred: {}; true: {}'.format(pred1[i], pred3[i], pred2[i],
-                                                                                          true[i]))
-                    outF.write("\n")
-                    outF.write(";".join(sentleft))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in fw1[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(sentright))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in bw1[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(target[i]))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in tl1[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in tr1[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(sentleft))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in fw2[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(sentright))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in bw2[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(target[i]))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in tl2[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in tr2[i][0]))
-                    outF.write("\n")
-                    outF.write(";".join(sent[i]))
-                    outF.write("\n")
-                    outF.write(";".join(str(x) for x in weights[i][0]))
-                    outF.write("\n")
-            outF.close()
-
-    # BoW model
-    if runSVM == True:
-        svmModel.main(FLAGS.train_svm_path, test, accuracyOnt, test_size, remaining_size)
+    if rest_test:
+        # Run restaurant test data through restaurant model.
+        run_test(source_domain="restaurant", target_domain="restaurant", year=2014, write_result=write_result)
 
     print('Finished program successfully.')
+
+
+# Run base model which can be saved for fine-tuning.
+def run_regular(source_domain, target_domain, year, learning_rate, keep_prob, momentum, l2_reg, write_result, savable):
+    # Hyper parameters.
+    FLAGS.learning_rate = learning_rate
+    FLAGS.keep_prob1 = keep_prob
+    FLAGS.keep_prob2 = keep_prob
+    FLAGS.momentum = momentum
+    FLAGS.l2_reg = l2_reg
+
+    # Other flags.
+    FLAGS.source_domain = source_domain
+    FLAGS.target_domain = target_domain
+    FLAGS.year = year
+    FLAGS.train_path = "data/programGeneratedData/BERT/" + FLAGS.source_domain + "/" + str(
+        FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
+    FLAGS.test_path = "data/programGeneratedData/BERT/" + FLAGS.target_domain + "/" + str(
+        FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
+    FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+    FLAGS.test_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.target_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+
+    if write_result:
+        with open(FLAGS.results_file, "w") as results:
+            results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + "\n---\n")
+        FLAGS.writable = 1
+
+    # Run main method.
+    if savable:
+        FLAGS.savable = 1
+    train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, False)
+    _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path, FLAGS.test_path, 1.0, test_size,
+                                                                    test_size, FLAGS.learning_rate, FLAGS.keep_prob1,
+                                                                    FLAGS.momentum, FLAGS.l2_reg)
+    tf.reset_default_graph()
+    FLAGS.savable = 0
+
+
+# Runs LCR-Rot-hop++ for multiple training splits.
+def run_split(source_domain, target_domain, year, splits, split_size, learning_rate, keep_prob, momentum, l2_reg,
+              write_result):
+    # Hyper parameters.
+    FLAGS.learning_rate = learning_rate
+    FLAGS.keep_prob1 = keep_prob
+    FLAGS.keep_prob2 = keep_prob
+    FLAGS.momentum = momentum
+    FLAGS.l2_reg = l2_reg
+
+    # Other flags.
+    FLAGS.source_domain = source_domain
+    FLAGS.target_domain = target_domain
+    FLAGS.year = year
+    FLAGS.test_path = "data/programGeneratedData/BERT/" + FLAGS.target_domain + "/" + str(
+        FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
+    FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+    FLAGS.test_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.target_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+
+    if write_result:
+        FLAGS.results_file = "data/programGeneratedData/" + str(
+            FLAGS.embedding_dim) + "results_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
+            FLAGS.year) + ".txt"
+        with open(FLAGS.results_file, "w") as results:
+            results.write("")
+        FLAGS.writable = 1
+
+    # Run main method.
+    for i in range(1, splits + 1):
+        print("Running " + FLAGS.source_domain + " to " + FLAGS.target_domain + " using " + str(
+            split_size * i) + " aspects...")
+        if FLAGS.writable == 1:
+            with open(FLAGS.results_file, "a") as results:
+                results.write(FLAGS.source_domain + " to " + FLAGS.target_domain + " using " + str(
+                    split_size * i) + " aspects\n---\n")
+        FLAGS.train_path = "data/programGeneratedData/BERT/" + FLAGS.source_domain + "/" + str(
+            FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT_" + str(
+            split_size * i) + ".txt"
+        train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, False)
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_hierarchical_v4.main(FLAGS.train_path, FLAGS.test_path, 1.0,
+                                                                        test_size, test_size, FLAGS.learning_rate,
+                                                                        FLAGS.keep_prob1, FLAGS.momentum, FLAGS.l2_reg)
+        tf.reset_default_graph()
+
+
+# Runs fine-tuning on a model originally trained on another domain to adapt for cross-domain use.
+# Fine-tune method must be slightly adapted to work on original domains other than restaurant.
+def run_fine_tune(original_domain, source_domain, target_domain, year, splits, split_size, learning_rate, keep_prob,
+                  momentum, l2_reg, write_result, split=True):
+    # Hyper parameters.
+    FLAGS.learning_rate = learning_rate
+    FLAGS.keep_prob1 = keep_prob
+    FLAGS.keep_prob2 = keep_prob
+    FLAGS.momentum = momentum
+    FLAGS.l2_reg = l2_reg
+
+    # Other flags.
+    FLAGS.source_domain = source_domain
+    FLAGS.target_domain = target_domain
+    FLAGS.year = year
+    FLAGS.test_path = "data/programGeneratedData/BERT/" + FLAGS.target_domain + "/" + str(
+        FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
+    FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+    FLAGS.test_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.target_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+
+    if write_result:
+        FLAGS.results_file = "data/programGeneratedData/" + str(
+            FLAGS.embedding_dim) + "results_" + original_domain + "_" + FLAGS.source_domain + "_" + FLAGS.target_domain + "_" + str(
+            FLAGS.year) + ".txt"
+        with open(FLAGS.results_file, "w") as results:
+            results.write("")
+        FLAGS.writable = 1
+
+    if split:
+        for i in range(1, splits + 1):
+            print(
+                "Running " + original_domain + " model with " + FLAGS.source_domain + " fine-tuning to " + FLAGS.target_domain + " using " + str(
+                    split_size * i) + " aspects...")
+            if FLAGS.writable == 1:
+                with open(FLAGS.results_file, "a") as results:
+                    results.write(
+                        original_domain + " to " + FLAGS.target_domain + " with " + FLAGS.source_domain + " fine-tuning using " + str(
+                            split_size * i) + " aspects\n---\n")
+            FLAGS.train_path = "data/programGeneratedData/BERT/" + source_domain + "/" + str(
+                FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT_" + str(
+                split_size * i) + ".txt"
+            train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, False)
+            _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_v4_fine_tune.main(FLAGS.train_path, FLAGS.test_path, 1.0,
+                                                                         test_size, test_size, FLAGS.learning_rate,
+                                                                         FLAGS.keep_prob1, FLAGS.momentum, FLAGS.l2_reg)
+            tf.reset_default_graph()
+    else:
+        FLAGS.train_path = "data/programGeneratedData/BERT/" + FLAGS.source_domain + "/" + str(
+            FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
+        print(
+            "Running " + original_domain + " model with " + FLAGS.source_domain + " fine-tuning to " + FLAGS.target_domain + "...")
+        if FLAGS.writable == 1:
+            with open(FLAGS.results_file, "a") as results:
+                results.write(
+                    original_domain + " to " + FLAGS.target_domain + " with " + FLAGS.source_domain + " fine-tuning\n---\n")
+        train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, False)
+        _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_v4_fine_tune.main(FLAGS.train_path, FLAGS.test_path, 1.0,
+                                                                     test_size, test_size, FLAGS.learning_rate,
+                                                                     FLAGS.keep_prob1, FLAGS.momentum, FLAGS.l2_reg)
+        tf.reset_default_graph()
+
+
+# Runs the test data through the model from the original domain.
+def run_test(source_domain, target_domain, year, write_result):
+    # Other flags.
+    FLAGS.source_domain = source_domain
+    FLAGS.target_domain = target_domain
+    FLAGS.year = year
+    FLAGS.train_path = "data/programGeneratedData/BERT/" + FLAGS.source_domain + "/" + str(
+        FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
+    FLAGS.test_path = "data/programGeneratedData/BERT/" + FLAGS.target_domain + "/" + str(
+        FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
+    FLAGS.train_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.source_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+    FLAGS.test_embedding = "data/programGeneratedData/" + FLAGS.embedding_type + "_" + FLAGS.target_domain + "_" + str(
+        FLAGS.year) + "_" + str(FLAGS.embedding_dim) + ".txt"
+
+    if write_result:
+        FLAGS.results_file = "data/programGeneratedData/" + str(
+            FLAGS.embedding_dim) + "results_" + source_domain + "_" + FLAGS.target_domain + "_test_" + str(
+            FLAGS.year) + ".txt"
+        with open(FLAGS.results_file, "w") as results:
+            results.write(source_domain + " to " + FLAGS.target_domain + "\n---\n")
+        FLAGS.writable = 1
+
+    # Run main method.
+    train_size, test_size, train_polarity_vector, test_polarity_vector = loadDataAndEmbeddings(FLAGS, False)
+    _, pred2, fw2, bw2, tl2, tr2 = lcrModelAlt_v4_test.main(FLAGS.test_path, 1.0, test_size, test_size)
+    tf.reset_default_graph()
 
 
 if __name__ == '__main__':

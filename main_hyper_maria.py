@@ -12,18 +12,28 @@ import lcrModel
 import lcrModelAlt
 import lcrModelInverse
 import svmModel
-from HAABSA import lcrModelAlt_hierarchical_v4
+from HAABSA import lcrModelAlt_hierarchical_v4, lcrModelAlt_v4_fine_tune
 # import parameter configuration and data paths
 from config import *
 from loadData import *
 
-domain = "laptop"
-path = "hyper_results/LCRROT-ALTV4/" + domain + "/" + str(FLAGS.n_iter) + "/"
-runs = 4
+# If the script gives an error try adjusting loadData.loadHyperData percentage, it seems like the LCR-Rot-hop++.method
+# cannot handle residual batches of one.
 
-FLAGS.train_path = "data/programGeneratedData/BERT/" + str(
-    FLAGS.embedding_dim) + "_" + FLAGS.source_domain + "_train_" + str(FLAGS.year) + "_BERT.txt"
-FLAGS.test_path = "data/programGeneratedData/BERT/" + str(
+# Make sure to adjust both objective and space in run_a_trial() to your problem.
+
+domain = "laptop"
+train_path = "data/programGeneratedData/BERT/laptop/768_laptop_train_2014_BERT_2250.txt"
+path = "hyper_results/fine_tuning/" + domain + "/" + str(FLAGS.n_iter) + "/"
+runs = 10
+n_iter = 15
+
+FLAGS.source_domain = domain
+FLAGS.target_domain = domain
+FLAGS.n_iter = n_iter
+
+FLAGS.train_path = train_path
+FLAGS.test_path = "data/programGeneratedData/BERT/" + FLAGS.target_domain + "/" + str(
     FLAGS.embedding_dim) + "_" + FLAGS.target_domain + "_test_" + str(FLAGS.year) + "_BERT.txt"
 
 train_size, test_size, train_polarity_vector, test_polarity_vector = loadHyperData(FLAGS, True)
@@ -36,6 +46,13 @@ accuracyOnt = 1.00
 eval_num = 0
 best_loss = None
 best_hyperparams = None
+
+finetunespace = [
+    hp.choice('learning_rate', [0.00001, 0.0001, 0.001, 0.005, 0.01, 0.02, 0.05, 0.07, 0.1]),
+    hp.quniform('keep_prob', 0.25, 0.75, 0.1),
+    hp.choice('momentum', [0.85, 0.9, 0.95, 0.99]),
+    hp.choice('l2', [0.00001, 0.0001, 0.001, 0.01, 0.1]),
+]
 lcrspace = [
     hp.choice('learning_rate', [0.001, 0.005, 0.02, 0.05, 0.06, 0.07, 0.08, 0.09, 0.01, 0.1]),
     hp.quniform('keep_prob', 0.25, 0.75, 0.1),
@@ -185,6 +202,40 @@ def lcr_altv4_objective(hyperparams):
     return result
 
 
+def lcr_fine_tune_objective(hyperparams):
+    global eval_num
+    global best_loss
+    global best_hyperparams
+
+    eval_num += 1
+    (learning_rate, keep_prob, momentum, l2) = hyperparams
+    print(hyperparams)
+
+    l, pred1, fw1, bw1, tl1, tr1 = lcrModelAlt_v4_fine_tune.main(FLAGS.hyper_train_path, FLAGS.hyper_eval_path,
+                                                                 accuracyOnt,
+                                                                 test_size, remaining_size, learning_rate, keep_prob,
+                                                                 momentum, l2)
+    tf.reset_default_graph()
+
+    # Save training results to disks with unique filenames
+
+    print(eval_num, l, hyperparams)
+
+    if best_loss is None or -l < best_loss:
+        best_loss = -l
+        best_hyperparams = hyperparams
+
+    result = {
+        'loss': -l,
+        'status': STATUS_OK,
+        'space': hyperparams,
+    }
+
+    save_json_result(str(l), result)
+
+    return result
+
+
 def cabasc_objective(hyperparams):
     global eval_num
     global best_loss
@@ -268,9 +319,9 @@ def run_a_trial():
 
     best = fmin(
         # Insert the method objective function
-        lcr_altv4_objective,
+        lcr_fine_tune_objective,
         # Define the methods hyper parameter space
-        space=lcrspace,
+        space=finetunespace,
         algo=tpe.suggest,
         trials=trials,
         max_evals=max_evals
