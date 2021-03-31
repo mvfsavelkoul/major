@@ -93,15 +93,18 @@ def load_aspect2id(input_file, word_id_mapping, w2v, embedding_dim):
     return aspect2id, np.asarray(a2v, dtype=np.float32)
 
 
-def change_y_to_onehot(y):
+def change_y_to_onehot(y, pos_neu_neg=True):
     from collections import Counter
+    count = Counter(y)
     if FLAGS.writable == 1:
-        count = Counter(y)
         with open(FLAGS.results_file, "a") as results:
             results.write("Positive: " + str(count['1']) + ", Neutral: " + str(
                 count['0']) + ", Negative: " + str(count['-1']) + ", Total: " + str(sum(count.values())) + "\n")
     print(Counter(y))
-    class_set = set(y)
+    if pos_neu_neg:
+        class_set = {1, 0, -1}
+    else:
+        class_set = set(y)
     n_class = len(class_set)
     y_onehot_mapping = dict(zip(class_set, range(n_class)))
     print(y_onehot_mapping)
@@ -113,15 +116,18 @@ def change_y_to_onehot(y):
     return np.asarray(onehot, dtype=np.int32), y_onehot_mapping
 
 
-def change_y_to_onehot_test(y, y_onehot_mapping):
+def change_y_to_onehot_keep(y, y_onehot_mapping, pos_neu_neg=True):
     from collections import Counter
+    count = Counter(y)
     if FLAGS.writable == 1:
-        count = Counter(y)
         with open(FLAGS.results_file, "a") as results:
             results.write("Positive: " + str(count['1']) + ", Neutral: " + str(
                 count['0']) + ", Negative: " + str(count['-1']) + ", Total: " + str(sum(count.values())) + "\n")
     print(Counter(y))
-    class_set = set(y)
+    if pos_neu_neg:
+        class_set = {1, 0, -1}
+    else:
+        class_set = set(y)
     n_class = len(class_set)
     print(y_onehot_mapping)
     onehot = []
@@ -132,7 +138,8 @@ def change_y_to_onehot_test(y, y_onehot_mapping):
     return np.asarray(onehot, dtype=np.int32), y_onehot_mapping
 
 
-def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=True, target_len=10, encoding='utf8'):
+def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=True, target_len=10, encoding='utf8',
+                        pos_neu_neg=True):
     if type(word_id_file) is str:
         word_to_id = load_word_id_mapping(word_id_file)
     else:
@@ -197,7 +204,7 @@ def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=T
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
     all_y = y;
-    y, y_onehot_mapping = change_y_to_onehot(y)
+    y, y_onehot_mapping = change_y_to_onehot(y, pos_neu_neg=pos_neu_neg)
     if type_ == 'TD':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
                np.asarray(sen_len_r), np.asarray(y)
@@ -212,8 +219,8 @@ def load_inputs_twitter(input_file, word_id_file, sentence_len, type_='', is_r=T
         return np.asarray(x), np.asarray(sen_len), np.asarray(y)
 
 
-def load_inputs_twitter_test(input_file, y_onehot_mapping, word_id_file, sentence_len, type_='', is_r=True,
-                             target_len=10, encoding='utf8'):
+def load_inputs_twitter_keep(input_file, y_onehot_mapping, word_id_file, sentence_len, type_='', is_r=True,
+                             target_len=10, encoding='utf8', pos_neu_neg=True):
     if type(word_id_file) is str:
         word_to_id = load_word_id_mapping(word_id_file)
     else:
@@ -278,7 +285,7 @@ def load_inputs_twitter_test(input_file, y_onehot_mapping, word_id_file, sentenc
             sen_len.append(len(words))
             x.append(words + [0] * (sentence_len - len(words)))
     all_y = y;
-    y, y_onehot_mapping = change_y_to_onehot_test(y, y_onehot_mapping)
+    y, y_onehot_mapping = change_y_to_onehot_keep(y, y_onehot_mapping, pos_neu_neg=pos_neu_neg)
     if type_ == 'TD':
         return np.asarray(x), np.asarray(sen_len), np.asarray(x_r), \
                np.asarray(sen_len_r), np.asarray(y)

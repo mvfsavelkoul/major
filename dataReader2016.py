@@ -79,7 +79,7 @@ def read_data_2016(fname, source_count, source_word2idx, target_count, target_ph
     tree = ET.parse(fname)
     root = tree.getroot()
 
-    outF = open(file_name, "w")
+    outF = open(file_name, "w", encoding="utf-8")
 
     # save all words in source_words (includes duplicates)
     # save all aspects in target_words (includes duplicates)

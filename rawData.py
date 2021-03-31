@@ -12,11 +12,11 @@ from config import *
 
 
 def main(_):
-    book_in = "data/externalData/book_reviews_2019"
-    hotel_in = "data/externalData/hotel_reviews_2014"
+    book_in = "data/externalData/book_reviews_2019.xml"
+    hotel_in = "data/externalData/hotel_reviews_2015.xml"
 
     book_out = "data/programGeneratedData/BERT/book/raw_data_book_2019.txt"
-    hotel_out = "data/programGeneratedData/BERT/hotel/raw_data_hotel_2014.txt"
+    hotel_out = "data/programGeneratedData/BERT/hotel/raw_data_hotel_2015.txt"
 
     with open(book_out, "w") as out:
         out.write("")

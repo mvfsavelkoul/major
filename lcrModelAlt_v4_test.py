@@ -11,7 +11,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 from nn_layer import softmax_layer, bi_dynamic_rnn, reduce_mean_with_len
 from att_layer_maria import bilinear_attention_layer, dot_produce_attention_layer
 from config import *
-from utils import load_w2v, batch_index, load_inputs_twitter_test
+from utils import load_w2v, batch_index, load_inputs_twitter_keep
 import numpy as np
 
 tf.set_random_seed(1)
@@ -186,14 +186,15 @@ def main(test_path, accuracyOnt, test_size, remaining_size, learning_rate=0.09, 
         if FLAGS.writable == 1:
             with open(FLAGS.results_file, "a") as results:
                 results.write("Test data. ")
-        te_x, te_sen_len, te_x_bw, te_sen_len_bw, te_y, te_target_word, te_tar_len, _, _, _, _ = load_inputs_twitter_test(
+        te_x, te_sen_len, te_x_bw, te_sen_len_bw, te_y, te_target_word, te_tar_len, _, _, _, _ = load_inputs_twitter_keep(
             test_path,
             y_onehot_mapping,
             test_word_id_mapping,
             FLAGS.max_sentence_len,
             'TC',
             is_r,
-            FLAGS.max_target_len
+            FLAGS.max_target_len,
+            pos_neu_neg=True
         )
 
         def get_batch_data(x_f, sen_len_f, x_b, sen_len_b, yi, target, tl, batch_size, kp1, kp2, is_shuffle=True):

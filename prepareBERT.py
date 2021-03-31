@@ -1,38 +1,30 @@
 '''
 This Program makes the BERT embedding matrix and test-/traindata, using the tokenisation for BERT
-First 'getBERTusingColab' should be used to compile the subfiles containing embeddings.
+First 'getBERTusingColab' should be used to compile the embeddings.
 The new test-/traindata files contain original data, with every word unique and corresponding to vector in emb_matrix
 '''
 from config import *
 
-# When BERT instead of BERT_Large, change filenames. Not possible with flags, as "xtilly" differs
 # <editor-fold desc="Combining embedding files, retrieved with 'getBERTusingColab">
 
-# temp_filenames_Large = ['/data/temporaryData/temp_BERT_Large/BERT_large1till227.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large227till300.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large300till865.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large865till951.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large951till1000.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large1000till1479.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large1479till1800.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large1800till2000.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large2000till2369.txt',
-#                  '/data/temporaryData/temp_BERT_Large/BERT_large2369till2530.txt']
+# Get raw data and BERT embedding first.
 
-# Get raw data first.
+# Domain is one of the following: restaurant (2014), laptop (2014), book (2019), hotel (2015), Apex (2004),
+# Camera (2004), Creative (2004), Nokia (2004).
 
-# For camera (Canon and Nikon), get raw_data_camera_2004 and add both BERT embeddings.
+domain = "book"
+year = 2019
+path = "data/programGeneratedData/BERT/" + domain + "/"
+temp_path = "data/programGeneratedData/BERT/"
 
-domain = "restaurant"
-path = "data/programGeneratedData/BERT/"
-
-temp_filenames_base = ["data/externalData/" + "BERT_base_" + domain + "_" + str(FLAGS.year) + ".txt"]
+temp_filenames_base = ["data/externalData/" + "BERT_base_" + domain + "_" + str(year) + ".txt"]
 
 FLAGS.source_domain = domain
 FLAGS.target_domain = domain
+FLAGS.year = year
 
 count_sentences = 0
-with open(path + "temp/BERT_base_" + str(FLAGS.year) + "embedding.txt", 'w') as outf:
+with open(temp_path + "temp/BERT_base_" + str(FLAGS.year) + "embedding.txt", 'w') as outf:
     for tfname in temp_filenames_base:
         print(tfname)
         with open(tfname) as infile:
@@ -44,7 +36,7 @@ with open(path + "temp/BERT_base_" + str(FLAGS.year) + "embedding.txt", 'w') as 
                     count_sentences += 1
 print("Sentences: " + str(count_sentences))
 count_sentences = 0
-with open(path + "temp/BERT_base_" + str(FLAGS.year) + "embedding_withCLS_SEP.txt", 'w') as outf:
+with open(temp_path + "temp/BERT_base_" + str(FLAGS.year) + "embedding_withCLS_SEP.txt", 'w') as outf:
     for tfname in temp_filenames_base:
         print(tfname)
         with open(tfname) as infile:
@@ -62,7 +54,7 @@ vocaBERT = []
 vocaBERT_SEP = []
 unique_words = []
 unique_words_index = []
-with open(path + "temp/BERT_base_" + str(FLAGS.year) + "embedding_withCLS_SEP.txt") as BERTemb_sep:
+with open(temp_path + "temp/BERT_base_" + str(FLAGS.year) + "embedding_withCLS_SEP.txt") as BERTemb_sep:
     for line in BERTemb_sep:
         word = line.split(" ")[0]
         if word == "[CLS]":
@@ -85,7 +77,7 @@ print("vocaBERT_SEP: " + str(len(vocaBERT_SEP)))  # 47168
 # <editor-fold desc="make embedding matrix with unique words, prints counter">
 counter = 0
 uniqueVocaBERT = []
-with open(path + "temp/BERT_base_" + str(FLAGS.year) + "embedding.txt") as BERTemb:
+with open(temp_path + "temp/BERT_base_" + str(FLAGS.year) + "embedding.txt") as BERTemb:
     with open("data/programGeneratedData/" + str(FLAGS.embedding_type) + '_' + domain + "_"
               + str(FLAGS.year) + '_' + str(FLAGS.embedding_dim) + '.txt', 'w') as outfile:
         for line in BERTemb:
@@ -125,7 +117,7 @@ print("uniqueVocaBERT_SEP: " + str(len(uniqueVocaBERT_SEP)))  # 47168
 
 # <editor-fold desc="make a matrix (three vectors) containing for each word in bert-tokeniser style:
 #   word_id (x_word), sentence_id (x_sent), target boolean, (x_targ)">
-lines = open(path + "raw_data_" + domain + "_" + str(FLAGS.year) + ".txt").readlines()
+lines = open(path + "raw_data_" + domain + "_" + str(FLAGS.year) + ".txt", encoding="utf-8").readlines()
 index = 0
 index_sep = 0
 x_word = []
@@ -173,7 +165,7 @@ for filenr in range(1, 8):
     sentence_target_unique = ""
     sentCount = 0
     dollarcount = 0
-    with open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_" + str(filenr) + '.txt', 'w') as outFile:
+    with open(temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_" + str(filenr) + '.txt', 'w') as outFile:
         for u in range(0, len(uniqueVocaBERT_SEP)):
             if uniqueVocaBERT_SEP[u] == "[SEP]":
                 outFile.write(sentence_senten_unique + '\n')
@@ -193,7 +185,7 @@ for filenr in range(1, 8):
                     sentence_senten_unique += uniqueVocaBERT_SEP[u] + ' '
     # </editor-fold>
 
-    lines = open(path + "raw_data_" + domain + "_" + str(FLAGS.year) + ".txt").readlines()
+    lines = open(path + "raw_data_" + domain + "_" + str(FLAGS.year) + ".txt", encoding="utf-8").readlines()
     index = 0
     index_sep = 0
     x_word = []
@@ -235,18 +227,18 @@ for filenr in range(1, 8):
     # print(x_tlen)
 
 # <editor-fold desc="Combine words, this is needed for different tokenisation for target phrase">
-lines_1 = open(path + "temp/" + "unique" + str(
+lines_1 = open(temp_path + "temp/" + "unique" + str(
     FLAGS.year) + "_BERT_Data_1.txt").readlines()  # different files for different extra target lengths
-lines_2 = open(path + "temp/" + "unique" + str(
+lines_2 = open(temp_path + "temp/" + "unique" + str(
     FLAGS.year) + "_BERT_Data_2.txt").readlines()  # e.g., file 2 contains target phrases
 lines_3 = open(
-    path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_3.txt").readlines()  # that are 1 word longer in BERT
-lines_4 = open(path + "temp/" + "unique" + str(
+    temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_3.txt").readlines()  # that are 1 word longer in BERT
+lines_4 = open(temp_path + "temp/" + "unique" + str(
     FLAGS.year) + "_BERT_Data_4.txt").readlines()  # embedding than the original target phrase
-lines_5 = open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_5.txt").readlines()
-lines_6 = open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_6.txt").readlines()
-lines_7 = open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_7.txt").readlines()
-with open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt", 'w') as outF:
+lines_5 = open(temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_5.txt").readlines()
+lines_6 = open(temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_6.txt").readlines()
+lines_7 = open(temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_7.txt").readlines()
+with open(temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt", 'w') as outF:
     for i in range(0, len(lines_1), 3):
         if lines_1[i + 1] == '\n':
             if lines_2[i + 1] == '\n':
@@ -280,23 +272,45 @@ with open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt", 'w
 
 # <editor-fold desc="Split in train and test file">
 
-linesAllData = open(path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt").readlines()
+linesAllData = open(temp_path + "temp/" + "unique" + str(FLAGS.year) + "_BERT_Data_All.txt").readlines()
 
-if domain == "laptop" or domain == "book":
+if domain == "laptop" or domain == "book" or domain == "hotel" or domain == "Apex" or domain == "Camera" or domain == "Creative" or domain == "Nokia":
     # Split datasets.
     if domain == "laptop":
         # Laptop train originally has 2313 aspects (6939 lines).
         train_lines = 6750
-    else:
-        # Book train will have 2500 aspects (7500 lines).
-        train_lines = 7500
-    for i in range(0, train_lines, 750):
-        with open(path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(
+        split_size = 250
+    elif domain == "book":
+        # Book train has 2700 aspects (8100 lines).
+        train_lines = 8100
+        split_size = 300
+    elif domain == "hotel":
+        # Hotel train has 210 aspects (630 lines).
+        train_lines = 630
+        split_size = 21
+    elif domain == "Apex":
+        # Apex train has 250 aspects (750 lines).
+        train_lines = 750
+        split_size = 25
+    elif domain == "Camera":
+        # Camera train has 310 aspects (930 lines).
+        train_lines = 930
+        split_size = 31
+    elif domain == "Creative":
+        # Creative train has 540 aspects (1620 lines).
+        train_lines = 1620
+        split_size = 54
+    elif domain == "Nokia":
+        # Nokia train has 220 aspects (660 lines).
+        train_lines = 660
+        split_size = 22
+    for i in range(0, train_lines, 3 * split_size):
+        with open(path + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(
                 FLAGS.year) + "_BERT_" + str(
-            round((i + 750) / 3)) + ".txt", 'w') as outTrain:
-            for j in range(0, i + 750):
+            round((i + 3 * split_size) / 3)) + ".txt", 'w') as outTrain:
+            for j in range(0, i + 3 * split_size):
                 outTrain.write(linesAllData[j])
-    with open(path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt',
+    with open(path + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt',
               'w') as outTest:
         for k in range(train_lines, len(linesAllData)):
             outTest.write(linesAllData[k])
@@ -310,11 +324,11 @@ else:
         train_aspects = int(0.8 * (linesAllData / 3))
         train_lines = 3 * train_aspects
     with open(
-            path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(FLAGS.year) + '_BERT.txt',
+            path + str(FLAGS.embedding_dim) + "_" + domain + "_train_" + str(FLAGS.year) + '_BERT.txt',
             'w') as outTrain:
         for j in range(0, train_lines):
             outTrain.write(linesAllData[j])
-    with open(path + domain + "/" + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt',
+    with open(path + str(FLAGS.embedding_dim) + "_" + domain + "_test_" + str(FLAGS.year) + '_BERT.txt',
               'w') as outTest:
         for j in range(train_lines, len(linesAllData)):
             outTest.write(linesAllData[j])

@@ -25,8 +25,8 @@ def main(_):
     book_book = False
     small_small = False
     rest_lapt_lapt = False
-    rest_book_book = False
-    rest_small_small = False
+    rest_book_book = True
+    rest_small_small = True
     rest_test = False
     write_result = True
 
@@ -42,7 +42,7 @@ def main(_):
 
     if book_book:
         # Run book-book for all splits.
-        run_split(source_domain="book", target_domain="book", year=2019, splits=10, split_size=250,
+        run_split(source_domain="book", target_domain="book", year=2019, splits=9, split_size=300,
                   learning_rate=0.001, keep_prob=0.7, momentum=0.85, l2_reg=0.00001, write_result=write_result)
 
     if small_small:
@@ -53,14 +53,19 @@ def main(_):
         hyper_creative = [0.001, 0.7, 0.85, 0.00001]
         hyper_nokia = [0.001, 0.7, 0.85, 0.00001]
 
-        domains = [["hotel", 2014, hyper_hotel], ["Apex", 2004, hyper_apex], ["Camera", 2004, hyper_camera],
-                   ["Creative", 2004, hyper_creative], ["Nokia", 2004, hyper_nokia]]
+        # Name, year, train size step, hyperparameters.
+        hotel_domain = ["hotel", 2015, 21, hyper_hotel]
+        apex_domain = ["Apex", 2004, 25, hyper_apex]
+        camera_domain = ["Camera", 2004, 31, hyper_camera]
+        creative_domain = ["Creative", 2004, 54, hyper_creative]
+        nokia_domain = ["Nokia", 2004, 22, hyper_nokia]
+        domains = [hotel_domain, apex_domain, camera_domain, creative_domain, nokia_domain]
 
         # Run all single run models.
         for domain in domains:
-            run_regular(source_domain=domain[0], target_domain=domain[0], year=domain[1], learning_rate=domain[2][0],
-                        keep_prob=domain[2][1], momentum=domain[2][2], l2_reg=domain[2][3], write_result=write_result,
-                        savable=False)
+            run_split(source_domain=domain[0], target_domain=domain[0], year=domain[1], splits=10, split_size=domain[2],
+                      learning_rate=domain[3][0], keep_prob=domain[3][1], momentum=domain[3][2], l2_reg=domain[3][3],
+                      write_result=write_result)
 
     if rest_lapt_lapt:
         # Run laptop-laptop fine-tuning on restaurant model.
@@ -70,26 +75,31 @@ def main(_):
 
     if rest_book_book:
         # Run book-book fine-tuning on restaurant model.
-        run_fine_tune(original_domain="restaurant", source_domain="book", target_domain="book", year=2014, splits=10,
-                      split_size=250, learning_rate=0.001, keep_prob=0.6, momentum=0.99, l2_reg=0.001,
+        run_fine_tune(original_domain="restaurant", source_domain="book", target_domain="book", year=2019, splits=9,
+                      split_size=300, learning_rate=0.01, keep_prob=0.6, momentum=0.85, l2_reg=0.001,
                       write_result=write_result)
 
     if rest_small_small:
         # Hyper parameters (learning_rate, keep_prob, momentum, l2_reg).
-        hyper_hotel = [0.001, 0.7, 0.85, 0.00001]
-        hyper_apex = [0.001, 0.7, 0.85, 0.00001]
-        hyper_camera = [0.001, 0.7, 0.85, 0.00001]
-        hyper_creative = [0.001, 0.7, 0.85, 0.00001]
+        hyper_hotel = [0.00001, 0.7, 0.99, 0.0001]
+        hyper_apex = [0.005, 0.4, 0.95, 0.00001]
+        hyper_camera = [0.02, 0.4, 0.95, 0.001]
+        hyper_creative = [0.01, 0.3, 0.95, 0.01]
         hyper_nokia = [0.001, 0.7, 0.85, 0.00001]
 
-        # Run fine-tuning on restaurant model for all single run models.
-        domains = [["hotel", 2014, hyper_hotel], ["Apex", 2004, hyper_apex], ["Camera", 2004, hyper_camera],
-                   ["Creative", 2004, hyper_creative], ["Nokia", 2004, hyper_nokia]]
+        # Name, year, train size step, hyperparameters.
+        hotel_domain = ["hotel", 2015, 21, hyper_hotel]
+        apex_domain = ["Apex", 2004, 25, hyper_apex]
+        camera_domain = ["Camera", 2004, 31, hyper_camera]
+        creative_domain = ["Creative", 2004, 54, hyper_creative]
+        nokia_domain = ["Nokia", 2004, 22, hyper_nokia]
+        domains = [hotel_domain, apex_domain, camera_domain, creative_domain, nokia_domain]
 
+        # Run fine-tuning on restaurant model for all single run models.
         for domain in domains:
             run_fine_tune(original_domain="restaurant", source_domain=domain[0], target_domain=domain[0],
-                          year=domain[1], splits=0, split_size=0, learning_rate=domain[2][0], keep_prob=domain[2][1],
-                          momentum=domain[2][2], l2_reg=domain[2][3], write_result=write_result, split=False)
+                          year=domain[1], splits=10, split_size=domain[2], learning_rate=domain[3][0],
+                          keep_prob=domain[3][1], momentum=domain[3][2], l2_reg=domain[3][3], write_result=write_result)
 
     if rest_test:
         # Run restaurant test data through restaurant model.
