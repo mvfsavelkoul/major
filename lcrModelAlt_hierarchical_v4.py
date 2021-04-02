@@ -383,8 +383,9 @@ def main(train_path, test_path, accuracyOnt, test_size, remaining_size, learning
                     "Neutral. Correct: {}, Incorrect: {}, Total: {}\n".format(neu_correct, neu_count - neu_correct,
                                                                               neu_count))
                 results.write(
-                    "Negative. Correct: {}, Incorrect: {}, Total: {}\n\n".format(neg_correct, neg_count - neg_correct,
-                                                                                 neg_count))
+                    "Negative. Correct: {}, Incorrect: {}, Total: {}\n---\n".format(neg_correct,
+                                                                                    neg_count - neg_correct,
+                                                                                    neg_count))
 
         return acc, np.where(np.subtract(py, ty) == 0, 0,
                              1), fw.tolist(), bw.tolist(), tl.tolist(), tr.tolist()

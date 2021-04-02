@@ -249,7 +249,7 @@ def main(test_path, accuracyOnt, test_size, remaining_size, learning_rate=0.09, 
         if FLAGS.writable == 1:
             with open(FLAGS.results_file, "a") as results:
                 results.write(
-                    "---\nLCR-Rot-Hop++. Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n".format(acc, totalacc))
+                    "---\nLCR-Rot-Hop++. Test accuracy: {:.6f}, Combined accuracy: {:.6f}\n---\n".format(acc, totalacc))
 
         P = precision_score(ty, py, average=None)
         R = recall_score(ty, py, average=None)
@@ -302,8 +302,9 @@ def main(test_path, accuracyOnt, test_size, remaining_size, learning_rate=0.09, 
                     "Neutral. Correct: {}, Incorrect: {}, Total: {}\n".format(neu_correct, neu_count - neu_correct,
                                                                               neu_count))
                 results.write(
-                    "Negative. Correct: {}, Incorrect: {}, Total: {}\n\n".format(neg_correct, neg_count - neg_correct,
-                                                                                 neg_count))
+                    "Negative. Correct: {}, Incorrect: {}, Total: {}\n---\n".format(neg_correct,
+                                                                                    neg_count - neg_correct,
+                                                                                    neg_count))
 
         return acc, np.where(np.subtract(py, ty) == 0, 0,
                              1), fw.tolist(), bw.tolist(), tl.tolist(), tr.tolist()
