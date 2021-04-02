@@ -12,8 +12,8 @@ from config import *
 # Domain is one of the following: restaurant (2014), laptop (2014), book (2019), hotel (2015), Apex (2004),
 # Camera (2004), Creative (2004), Nokia (2004).
 
-domain = "book"
-year = 2019
+domain = "hotel"
+year = 2015
 path = "data/programGeneratedData/BERT/" + domain + "/"
 temp_path = "data/programGeneratedData/BERT/"
 
@@ -285,9 +285,9 @@ if domain == "laptop" or domain == "book" or domain == "hotel" or domain == "Ape
         train_lines = 8100
         split_size = 300
     elif domain == "hotel":
-        # Hotel train has 210 aspects (630 lines).
-        train_lines = 630
-        split_size = 21
+        # Hotel train has 200 aspects (600 lines).
+        train_lines = 600
+        split_size = 20
     elif domain == "Apex":
         # Apex train has 250 aspects (750 lines).
         train_lines = 750

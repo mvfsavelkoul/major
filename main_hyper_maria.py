@@ -27,13 +27,13 @@ def main():
 
     # Name, year, train size.
     book_domain = ["book", 2019, 2700]
-    hotel_domain = ["hotel", 2015, 210]
+    hotel_domain = ["hotel", 2015, 200]
     apex_domain = ["Apex", 2004, 250]
     camera_domain = ["Camera", 2004, 310]
     creative_domain = ["Creative", 2004, 540]
     nokia_domain = ["Nokia", 2004, 220]
     # domains = [book_domain, hotel_domain, apex_domain, camera_domain, creative_domain, nokia_domain]
-    domains = [nokia_domain]
+    domains = [hotel_domain]
 
     for domain in domains:
         run_hyper(domain=domain[0], year=domain[1], size=domain[2], fine_tune=fine_tune, runs=runs, n_iter=n_iter)

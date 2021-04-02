@@ -25,10 +25,13 @@ def main(_):
     book_book = False
     small_small = False
     rest_lapt_lapt = False
-    rest_book_book = True
+    rest_book_book = False
     rest_small_small = True
     rest_test = False
     write_result = True
+    n_iter = 200
+
+    FLAGS.n_iter = n_iter
 
     if rest_lapt:
         # Run and save restaurant-laptop.
@@ -54,7 +57,7 @@ def main(_):
         hyper_nokia = [0.001, 0.7, 0.85, 0.00001]
 
         # Name, year, train size step, hyperparameters.
-        hotel_domain = ["hotel", 2015, 21, hyper_hotel]
+        hotel_domain = ["hotel", 2015, 20, hyper_hotel]
         apex_domain = ["Apex", 2004, 25, hyper_apex]
         camera_domain = ["Camera", 2004, 31, hyper_camera]
         creative_domain = ["Creative", 2004, 54, hyper_creative]
@@ -85,10 +88,10 @@ def main(_):
         hyper_apex = [0.005, 0.4, 0.95, 0.00001]
         hyper_camera = [0.02, 0.4, 0.95, 0.001]
         hyper_creative = [0.01, 0.3, 0.95, 0.01]
-        hyper_nokia = [0.001, 0.7, 0.85, 0.00001]
+        hyper_nokia = [0.02, 0.3, 0.95, 0.001]
 
         # Name, year, train size step, hyperparameters.
-        hotel_domain = ["hotel", 2015, 21, hyper_hotel]
+        hotel_domain = ["hotel", 2015, 20, hyper_hotel]
         apex_domain = ["Apex", 2004, 25, hyper_apex]
         camera_domain = ["Camera", 2004, 31, hyper_camera]
         creative_domain = ["Creative", 2004, 54, hyper_creative]
